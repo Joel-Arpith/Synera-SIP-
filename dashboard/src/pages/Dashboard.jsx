@@ -87,6 +87,18 @@ const Dashboard = () => {
     low: '#9ca3af' 
   };
 
+  const ATTACK_COLORS = {
+    RECONNAISSANCE: "#06b6d4",   // cyan
+    DOS: "#ef4444",              // red  
+    EXPLOIT: "#f59e0b",          // amber
+    MALWARE: "#8b5cf6",          // purple
+    UNKNOWN: "#6b7280",          // gray
+    "SLOW SCAN": "#f97316",      // orange
+    "DNS EXFIL": "#ec4899",      // pink
+    "ARP SPOOF": "#14b8a6",      // teal
+    "WEB ATTACK": "#84cc16",     // lime
+  };
+
   return (
     <div className="space-y-6">
       {/* Stat Cards */}
@@ -202,7 +214,7 @@ const Dashboard = () => {
                   <td className="text-cyan-primary">{alert.src_ip}</td>
                   <td>{alert.dest_ip}</td>
                   <td>
-                    <span className={`badge badge-${alert.severity}`}>
+                    <span className={`badge badge-${(alert.attack_type?.includes('SLOW SCAN')) ? 'high' : alert.severity}`}>
                       {alert.severity}
                     </span>
                   </td>

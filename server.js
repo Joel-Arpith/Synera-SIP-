@@ -24,6 +24,63 @@ const strikes = new Map(); // key: src_ip, value: { count, lastAlertTime }
 const WINDOW_MS = 60 * 1000; // 60s for deduplication
 const STRIKE_WINDOW_MS = 5 * 60 * 1000; // 5 min for auto-block
 
+// ─── Slow Scan Tracker ───────────────────────────────────
+class SlowScanTracker {
+  constructor() {
+    // ip → { ports: Set, firstSeen: timestamp }
+    this.tracker = new Map();
+    this.WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+    this.PORT_THRESHOLD = 15; // unique ports
+
+    // Clean up old entries every 5 minutes
+    setInterval(() => this.cleanup(), 5 * 60 * 1000);
+  }
+
+  track(src_ip, dest_port) {
+    const now = Date.now();
+    
+    if (!this.tracker.has(src_ip)) {
+      this.tracker.set(src_ip, { 
+        ports: new Set(), 
+        firstSeen: now 
+      });
+    }
+
+    const entry = this.tracker.get(src_ip);
+    
+    // Reset window if expired
+    if (now - entry.firstSeen > this.WINDOW_MS) {
+      entry.ports.clear();
+      entry.firstSeen = now;
+    }
+
+    entry.ports.add(dest_port);
+
+    // Trigger if threshold exceeded
+    if (entry.ports.size >= this.PORT_THRESHOLD) {
+      entry.ports.clear(); // reset after alert
+      return {
+        triggered: true,
+        portCount: entry.ports.size,
+        windowMinutes: this.WINDOW_MS / 60000
+      };
+    }
+
+    return { triggered: false };
+  }
+
+  cleanup() {
+    const now = Date.now();
+    for (const [ip, entry] of this.tracker.entries()) {
+      if (now - entry.firstSeen > this.WINDOW_MS) {
+        this.tracker.delete(ip);
+      }
+    }
+  }
+}
+
+const slowScanTracker = new SlowScanTracker();
+
 // --- Enrichment Logic ---
 function classifyAttack(category) {
     if (!category) return "UNKNOWN";
@@ -111,6 +168,26 @@ app.post('/api/ingest', async (req, res) => {
     };
 
     // 3. Store in Supabase
+    
+    // Check for slow scan pattern
+    if (alert.dest_port) {
+        const scanCheck = slowScanTracker.track(alert.src_ip, alert.dest_port);
+        if (scanCheck.triggered) {
+            const slowScanAlert = {
+                ...alert,
+                signature: "SLOW SCAN - Multiple ports over extended window",
+                attack_type: "RECONNAISSANCE",
+                severity: "high",
+                category: "Slow Port Scan",
+                grouped: false,
+                count: scanCheck.portCount
+            };
+            // Enrich synthetic alert
+            const sGeo = getGeo(alert.src_ip);
+            await supabase.from('alerts').insert({ ...slowScanAlert, ...sGeo }).select();
+        }
+    }
+
     const { data, error } = await supabase.from('alerts').insert(enrichedAlert).select();
     if (error) return res.status(500).json({ error: error.message });
 

@@ -1,95 +1,149 @@
+#!/usr/bin/env python3
+"""
+Robust Suricata log tailer using inotify.
+Handles log rotation, file deletion, re-creation.
+"""
+
 import os
+import sys
 import json
 import time
 import requests
-import subprocess
-import signal
-import sys
+import inotify.adapters
+import inotify.constants
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configuration
-LOG_PATH = os.getenv("SURICATA_LOG_PATH", "/var/log/suricata/eve.json")
+LOG_PATH = os.getenv(
+  "SURICATA_LOG_PATH", 
+  "/var/log/suricata/eve.json"
+)
 BACKEND_URL = f"http://localhost:{os.getenv('PORT', '3001')}/api/ingest"
-INGEST_SECRET = os.getenv("INGEST_SECRET")
+INGEST_SECRET = os.getenv("INGEST_SECRET", "")
+LOG_DIR = str(Path(LOG_PATH).parent)
+LOG_FILE = str(Path(LOG_PATH).name)
 
-def tail_suricata_logs():
-    print(f"[START] Monitoring Suricata logs: {LOG_PATH}")
-    
-    # Use tail -F to handle log rotation gracefully
-    cmd = ["tail", "-n", "0", "-F", LOG_PATH]
-    
-    try:
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        while True:
-            line = process.stdout.readline()
-            if not line:
-                if process.poll() is not None:
-                    break
-                continue
-                
-            try:
-                data = json.loads(line)
-                if data.get("event_type") == "alert":
-                    process_alert(data)
-            except json.JSONDecodeError:
-                continue
-            except Exception as e:
-                print(f"[ERROR] {e}")
 
-    except KeyboardInterrupt:
-        print("\n[STOP] Shutting down tailer...")
-        process.terminate()
-    except Exception as e:
-        print(f"[FATAL] {e}")
-        sys.exit(1)
+def send_alert(alert: dict):
+  try:
+    requests.post(
+      BACKEND_URL,
+      json=alert,
+      headers={"x-ingest-secret": INGEST_SECRET},
+      timeout=5
+    )
+  except Exception as e:
+    print(f"[tailer] Send error: {e}", file=sys.stderr)
 
-def process_alert(data):
-    alert_info = data.get("alert", {})
-    
-    # Standardize data for backend ingestion
-    payload = {
-        "timestamp": data.get("timestamp"),
-        "src_ip": data.get("src_ip"),
-        "src_port": data.get("src_port"),
-        "dest_ip": data.get("dest_ip"),
-        "dest_port": data.get("dest_port"),
-        "proto": data.get("proto"),
+
+def process_line(line: str):
+  line = line.strip()
+  if not line:
+    return
+  try:
+    parsed = json.loads(line)
+    if parsed.get("event_type") == "alert":
+      # Standardize fields for backend
+      alert_info = parsed.get("alert", {})
+      payload = {
+        "timestamp": parsed.get("timestamp"),
+        "src_ip": parsed.get("src_ip"),
+        "src_port": parsed.get("src_port"),
+        "dest_ip": parsed.get("dest_ip"),
+        "dest_port": parsed.get("dest_port"),
+        "proto": parsed.get("proto"),
         "signature": alert_info.get("signature"),
         "severity": str(alert_info.get("severity")),
         "category": alert_info.get("category"),
-        "payload": data
-    }
+        "payload": parsed
+      }
+      send_alert(payload)
+  except json.JSONDecodeError:
+    pass  # skip malformed lines
 
-    try:
-        response = requests.post(
-            BACKEND_URL,
-            json=payload,
-            headers={"x-ingest-secret": INGEST_SECRET},
-            timeout=5
+
+def tail_file():
+  print(f"[tailer] Watching {LOG_PATH}")
+  
+  # Wait for file to exist
+  while not os.path.exists(LOG_PATH):
+    print("[tailer] Waiting for log file...")
+    time.sleep(2)
+
+  inotify_instance = inotify.adapters.Inotify()
+  
+  # Watch both the file and directory
+  # Directory watch catches log rotation (new file creation)
+  inotify_instance.add_watch(
+    LOG_DIR,
+    inotify.constants.IN_CREATE | 
+    inotify.constants.IN_MOVED_TO
+  )
+  inotify_instance.add_watch(
+    LOG_PATH,
+    inotify.constants.IN_MODIFY |
+    inotify.constants.IN_CLOSE_WRITE |
+    inotify.constants.IN_DELETE_SELF |
+    inotify.constants.IN_MOVE_SELF
+  )
+
+  file_handle = open(LOG_PATH, "r")
+  file_handle.seek(0, 2)  # seek to end
+
+  print("[tailer] Tailing started")
+
+  try:
+    for event in inotify_instance.event_gen(yield_nones=False):
+      (_, type_names, path, filename) = event
+
+      # File modified — read new lines
+      if "IN_MODIFY" in type_names:
+        for line in file_handle:
+          process_line(line)
+
+      # File rotated or deleted — reopen
+      elif any(t in type_names for t in [
+        "IN_DELETE_SELF", 
+        "IN_MOVE_SELF",
+        "IN_CLOSE_WRITE"
+      ]):
+        print("[tailer] Log rotation detected, reopening")
+        file_handle.close()
+        time.sleep(1)
+        
+        # Wait for new file
+        while not os.path.exists(LOG_PATH):
+          time.sleep(0.5)
+        
+        file_handle = open(LOG_PATH, "r")
+        inotify_instance.add_watch(
+          LOG_PATH,
+          inotify.constants.IN_MODIFY |
+          inotify.constants.IN_DELETE_SELF |
+          inotify.constants.IN_MOVE_SELF
         )
-        if response.status_code == 200:
-            status = response.json().get("status")
-            if status == "suppressed":
-                print(f"[SUPPRESSED] {payload['src_ip']} -> {payload['signature']}")
-            else:
-                print(f"[INGESTED] {payload['src_ip']} -> {payload['signature']}")
-        else:
-            print(f"[ERROR] Backend returned {response.status_code}")
-    except Exception as e:
-        print(f"[ERROR] Failed to send to backend: {e}")
+        print("[tailer] Reopened successfully")
+
+      # New file created in dir (rotation variant)
+      elif "IN_CREATE" in type_names and filename == LOG_FILE:
+        print("[tailer] New log file created, switching")
+        file_handle.close()
+        time.sleep(0.5)
+        file_handle = open(LOG_PATH, "r")
+
+  except KeyboardInterrupt:
+    print("[tailer] Stopped")
+  finally:
+    file_handle.close()
+
 
 if __name__ == "__main__":
-    if not os.path.exists(LOG_PATH):
-        print(f"[WAIT] Waiting for log file at {LOG_PATH}...")
-        # Ensure directory exists for tail -F to watch
-        log_dir = os.path.dirname(LOG_PATH)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir, exist_ok=True)
-        # Create dummy file if it doesn't exist to prevent tail error
-        with open(LOG_PATH, 'a'):
-            os.utime(LOG_PATH, None)
-
-    tail_suricata_logs()
+  # Auto-restart on crash
+  while True:
+    try:
+      tail_file()
+    except Exception as e:
+      print(f"[tailer] Crashed: {e}. Restarting in 3s")
+      time.sleep(3)

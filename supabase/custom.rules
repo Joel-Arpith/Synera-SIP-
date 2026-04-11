@@ -1,0 +1,90 @@
+# ─── DNS EXFILTRATION DETECTION ───────────────────────────
+# Long subdomain = likely data encoding
+alert dns any any -> any 53 (
+  msg:"POSSIBLE DNS Exfiltration - Abnormally Long Query";
+  dns.query;
+  pcre:"/^[a-zA-Z0-9+\/=]{40,}\./";
+  threshold: type limit, track by_src, count 1, seconds 60;
+  classtype:trojan-activity;
+  sid:9000001; rev:1;
+)
+
+# High frequency DNS to single domain = beaconing
+alert dns any any -> any 53 (
+  msg:"POSSIBLE C2 Beaconing - High Frequency DNS";
+  dns.query;
+  threshold: type threshold, track by_src, count 20, seconds 60;
+  classtype:trojan-activity;
+  sid:9000002; rev:1;
+)
+
+# ─── SLOW PORT SCAN DETECTION ─────────────────────────────
+# SYN to multiple ports with no response = slow scan
+alert tcp any any -> $HOME_NET any (
+  msg:"POSSIBLE Slow Port Scan Detected";
+  flags:S;
+  threshold: type threshold, track by_src, count 5, seconds 300;
+  classtype:attempted-recon;
+  sid:9000003; rev:1;
+)
+
+# ─── NULL / XMAS PACKET DETECTION ─────────────────────────
+alert tcp any any -> $HOME_NET any (
+  msg:"ATTACK NULL Scan Detected";
+  flags:0;
+  classtype:attempted-recon;
+  sid:9000004; rev:1;
+)
+
+alert tcp any any -> $HOME_NET any (
+  msg:"ATTACK XMAS Scan Detected";
+  flags:FPU;
+  classtype:attempted-recon;
+  sid:9000005; rev:1;
+)
+
+# ─── SSH BRUTE FORCE ──────────────────────────────────────
+alert tcp any any -> $HOME_NET 22 (
+  msg:"ATTACK SSH Brute Force Attempt";
+  flow:to_server,established;
+  threshold: type threshold, track by_src, count 5, seconds 60;
+  classtype:attempted-admin;
+  sid:9000006; rev:1;
+)
+
+# ─── HTTP SUSPICIOUS PATTERNS ─────────────────────────────
+# SQL injection attempt
+alert http any any -> $HOME_NET any (
+  msg:"ATTACK SQL Injection Attempt";
+  http.uri;
+  pcre:"/(\%27)|(\')|(\-\-)|(\%23)|(#)/i";
+  classtype:web-application-attack;
+  sid:9000007; rev:1;
+)
+
+# Directory traversal
+alert http any any -> $HOME_NET any (
+  msg:"ATTACK Directory Traversal Attempt";
+  http.uri;
+  content:"../";
+  classtype:web-application-attack;
+  sid:9000008; rev:1;
+)
+
+# ─── ICMP FLOOD DETECTION ─────────────────────────────────
+alert icmp any any -> $HOME_NET any (
+  msg:"ATTACK ICMP Flood DoS";
+  itype:8;
+  threshold: type threshold, track by_src, count 100, seconds 10;
+  classtype:attempted-dos;
+  sid:9000009; rev:1;
+)
+
+# ─── ARP SPOOFING (LAN attack) ────────────────────────────
+alert arp any any -> any any (
+  msg:"ATTACK Possible ARP Spoofing";
+  arp.opcode:2;
+  threshold: type threshold, track by_src, count 10, seconds 5;
+  classtype:bad-unknown;
+  sid:9000010; rev:1;
+)
