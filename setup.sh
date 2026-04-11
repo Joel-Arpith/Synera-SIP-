@@ -75,5 +75,6 @@ sudo systemctl enable cyberids cyberids-tailer suricata
 
 echo ""
 echo "=== Setup Complete ==="
-echo "Next: cp .env.example .env && nano .env"
-echo "Then: sudo systemctl start suricata cyberids cyberids-tailer"
+echo "1. Configure your Supabase project with /supabase/schema.sql"
+echo "2. cp .env.example .env && nano .env"
+echo "3. sudo systemctl start suricata cyberids cyberids-tailer"
