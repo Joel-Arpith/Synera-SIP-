@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-gray-100 font-sans antialiased;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface/80 backdrop-blur-md border border-border rounded-xl;
+  }
+  
+  .soc-table {
+    @apply w-full text-left font-mono text-sm;
+  }
+  
+  .soc-table th {
+    @apply px-4 py-3 bg-border/50 text-gray-400 font-semibold uppercase tracking-wider;
+  }
+  
+  .soc-table td {
+    @apply px-4 py-3 border-b border-border/50 hover:bg-white/5 transition-colors;
+  }
+
+  .btn-primary {
+    @apply bg-cyan-primary hover:bg-cyan-secondary text-white font-bold py-2 px-4 rounded-lg transition-all active:scale-95;
+  }
+
+  .badge {
+    @apply px-2.5 py-0.5 rounded-full text-xs font-bold uppercase;
+  }
+
+  .badge-critical { @apply bg-danger/20 text-danger border border-danger/40; }
+  .badge-high { @apply bg-warning/20 text-warning border border-warning/40; }
+  .badge-medium { @apply bg-amber-500/20 text-amber-500 border border-amber-500/40; }
+  .badge-low { @apply bg-gray-500/20 text-gray-400 border border-gray-500/40; }
+}
+
+/* Custom pulsing animation for the map dots */
+@keyframes ring {
+  0% { transform: scale(0.5); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.pulse-ring {
+  animation: ring 2s infinite ease-out;
+}

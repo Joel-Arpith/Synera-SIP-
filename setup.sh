@@ -18,8 +18,8 @@ sudo apt install -y suricata
 sudo suricata-update
 
 # Install project dependencies
-npm install
-pip3 install requests watchdog --break-system-packages
+npm install express cors dotenv @supabase/supabase-js geoip-lite
+pip3 install requests watchdog python-dotenv --break-system-packages
 
 # Download MaxMind GeoLite2 (requires free account + license key)
 echo "Download GeoLite2-City.mmdb from:"

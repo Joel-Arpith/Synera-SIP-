@@ -2,100 +2,94 @@ import os
 import json
 import time
 import requests
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+import subprocess
+import signal
+import sys
 from dotenv import load_dotenv
-from supabase import create_client, Client
 
 load_dotenv()
 
 # Configuration
 LOG_PATH = os.getenv("SURICATA_LOG_PATH", "/var/log/suricata/eve.json")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+BACKEND_URL = f"http://localhost:{os.getenv('PORT', '3001')}/api/ingest"
 INGEST_SECRET = os.getenv("INGEST_SECRET")
-BACKEND_URL = f"http://localhost:{os.getenv('PORT', '3001')}"
 
-# Supabase Client
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-class SuricataLogHandler(FileSystemEventHandler):
-    def __init__(self, filename):
-        self.filename = filename
-        self.file = open(filename, 'r')
-        self.file.seek(0, 2)  # Go to end of file
-
-    def on_modified(self, event):
-        if event.src_path == self.filename:
-            self.process_new_lines()
-
-    def process_new_lines(self):
+def tail_suricata_logs():
+    print(f"[START] Monitoring Suricata logs: {LOG_PATH}")
+    
+    # Use tail -F to handle log rotation gracefully
+    cmd = ["tail", "-n", "0", "-F", LOG_PATH]
+    
+    try:
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
         while True:
-            line = self.file.readline()
+            line = process.stdout.readline()
             if not line:
-                break
+                if process.poll() is not None:
+                    break
+                continue
+                
             try:
                 data = json.loads(line)
                 if data.get("event_type") == "alert":
-                    self.handle_alert(data)
+                    process_alert(data)
+            except json.JSONDecodeError:
+                continue
             except Exception as e:
-                print(f"[ERROR] Parsing line: {e}")
+                print(f"[ERROR] {e}")
 
-    def handle_alert(self, data):
-        alert = data.get("alert", {})
-        payload = {
-            "timestamp": data.get("timestamp"),
-            "src_ip": data.get("src_ip"),
-            "src_port": data.get("src_port"),
-            "dest_ip": data.get("dest_ip"),
-            "dest_port": data.get("dest_port"),
-            "signature": alert.get("signature"),
-            "category": alert.get("category"),
-            "severity": alert.get("severity"),
-            "proto": data.get("proto"),
-            "payload": data
-        }
+    except KeyboardInterrupt:
+        print("\n[STOP] Shutting down tailer...")
+        process.terminate()
+    except Exception as e:
+        print(f"[FATAL] {e}")
+        sys.exit(1)
 
-        print(f"[ALERT] {payload['src_ip']} -> {payload['dest_ip']} | {payload['signature']}")
+def process_alert(data):
+    alert_info = data.get("alert", {})
+    
+    # Standardize data for backend ingestion
+    payload = {
+        "timestamp": data.get("timestamp"),
+        "src_ip": data.get("src_ip"),
+        "src_port": data.get("src_port"),
+        "dest_ip": data.get("dest_ip"),
+        "dest_port": data.get("dest_port"),
+        "proto": data.get("proto"),
+        "signature": alert_info.get("signature"),
+        "severity": str(alert_info.get("severity")),
+        "category": alert_info.get("category"),
+        "payload": data
+    }
 
-        # Push to Supabase
-        try:
-            supabase.table("alerts").insert(payload).execute()
-        except Exception as e:
-            print(f"[ERROR] Pushing to Supabase: {e}")
-
-        # Check for auto-blocking
-        if os.getenv("AUTO_BLOCK_ENABLED") == "true":
-            self.check_auto_block(payload['src_ip'])
-
-    def check_auto_block(self, ip):
-        # Notify backend to handle blocking logic
-        try:
-            requests.post(
-                f"{BACKEND_URL}/block",
-                json={"ip": ip, "reason": "Suricata Alert Threshold Reached"},
-                headers={"x-ingest-secret": INGEST_SECRET},
-                timeout=5
-            )
-        except Exception as e:
-            print(f"[ERROR] Contacting backend for blocking: {e}")
+    try:
+        response = requests.post(
+            BACKEND_URL,
+            json=payload,
+            headers={"x-ingest-secret": INGEST_SECRET},
+            timeout=5
+        )
+        if response.status_code == 200:
+            status = response.json().get("status")
+            if status == "suppressed":
+                print(f"[SUPPRESSED] {payload['src_ip']} -> {payload['signature']}")
+            else:
+                print(f"[INGESTED] {payload['src_ip']} -> {payload['signature']}")
+        else:
+            print(f"[ERROR] Backend returned {response.status_code}")
+    except Exception as e:
+        print(f"[ERROR] Failed to send to backend: {e}")
 
 if __name__ == "__main__":
     if not os.path.exists(LOG_PATH):
         print(f"[WAIT] Waiting for log file at {LOG_PATH}...")
-        while not os.path.exists(LOG_PATH):
-            time.sleep(1)
+        # Ensure directory exists for tail -F to watch
+        log_dir = os.path.dirname(LOG_PATH)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+        # Create dummy file if it doesn't exist to prevent tail error
+        with open(LOG_PATH, 'a'):
+            os.utime(LOG_PATH, None)
 
-    print(f"[START] Tailing Suricata logs: {LOG_PATH}")
-    
-    event_handler = SuricataLogHandler(LOG_PATH)
-    observer = Observer()
-    observer.schedule(event_handler, path=os.path.dirname(LOG_PATH), recursive=False)
-    observer.start()
-
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+    tail_suricata_logs()
