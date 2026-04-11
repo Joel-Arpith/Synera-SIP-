@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+firebase-service-account.json
+*.key
+GeoLite2-City.mmdb
+/var/log/
+__pycache__/
+*.pyc
