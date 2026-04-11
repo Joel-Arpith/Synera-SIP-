@@ -21,7 +21,8 @@ const Dashboard = () => {
     total: 0,
     activeThreats: 0,
     blockedCount: 0,
-    mostAttackedPort: '80'
+    mostAttackedPort: '80',
+    explanationCount: 0
   });
 
   useEffect(() => {
@@ -52,6 +53,7 @@ const Dashboard = () => {
   const fetchStats = async () => {
     const { data: alertsData } = await supabase.from('alerts').select('severity, dest_port');
     const { count: blockedCount } = await supabase.from('blocked_ips').select('*', { count: 'exact' });
+    const { count: explanationCount } = await supabase.from('alerts').select('*', { count: 'exact', head: true }).eq('explanation_status', 'generated');
 
     if (alertsData) {
         // Simple logic for stats
@@ -59,6 +61,7 @@ const Dashboard = () => {
             ...prev,
             total: alertsData.length,
             blockedCount: blockedCount || 0,
+            explanationCount: explanationCount || 0,
             activeThreats: alertsData.filter(a => a.severity === 'critical' || a.severity === 'high').length
         }));
     }
@@ -107,7 +110,7 @@ const Dashboard = () => {
           { label: 'Total Alerts', value: stats.total, icon: ShieldAlert, color: 'text-cyan-primary', bg: 'bg-cyan-primary/10' },
           { label: 'Active Threats', value: stats.activeThreats, icon: Activity, color: 'text-danger', bg: 'bg-danger/10' },
           { label: 'Blocked IPs', value: stats.blockedCount, icon: Target, color: 'text-warning', bg: 'bg-warning/10' },
-          { label: 'Top Port', value: stats.mostAttackedPort, icon: Globe, color: 'text-success', bg: 'bg-success/10' },
+          { label: 'AI Insights', value: stats.explanationCount, icon: Zap, color: 'text-purple-500', bg: 'bg-purple-500/10' },
         ].map((stat, i) => (
           <div key={i} className="glass-card p-6 flex items-center justify-between group hover:border-white/20 transition-all">
             <div>

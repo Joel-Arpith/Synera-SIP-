@@ -24,7 +24,11 @@ CREATE TABLE IF NOT EXISTS alerts (
     lng FLOAT,
     grouped BOOLEAN DEFAULT FALSE,
     count INT DEFAULT 1,
-    payload JSONB
+    payload JSONB,
+    explanation TEXT,
+    explanation_status TEXT DEFAULT 'pending' 
+      CHECK (explanation_status IN ('pending','generated','failed','skipped')),
+    explanation_generated_at TIMESTAMPTZ
 );
 
 -- Indexing
@@ -49,12 +53,14 @@ CREATE TABLE IF NOT EXISTS system_config (
     strike_threshold INT DEFAULT 5,
     window_minutes INT DEFAULT 5,
     email_notifications BOOLEAN DEFAULT FALSE,
-    alert_email TEXT
+    alert_email TEXT,
+    llm_enabled BOOLEAN DEFAULT TRUE,
+    llm_min_severity TEXT DEFAULT 'high'
 );
 
 -- Initial Config
-INSERT INTO system_config (id, auto_block_enabled, strike_threshold, window_minutes)
-VALUES ('settings', TRUE, 5, 5)
+INSERT INTO system_config (id, auto_block_enabled, strike_threshold, window_minutes, llm_enabled, llm_min_severity)
+VALUES ('settings', TRUE, 5, 5, TRUE, 'high')
 ON CONFLICT (id) DO NOTHING;
 
 -- RLS Policies

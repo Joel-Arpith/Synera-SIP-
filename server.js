@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const geoip = require('geoip-lite');
 const { exec } = require('child_process');
+const { explainAlert } = require('./llm');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -207,6 +208,13 @@ app.post('/api/ingest', async (req, res) => {
             await blockIP(src_ip, `Exceeded 5 ${sev} alerts in 5 mins`, strike.count);
         }
     }
+
+    // ─── LLM Explanation (async, non-blocking) ──────────────
+    // Fire and forget — explanation field updates in background
+    // Dashboard picks it up via Supabase Realtime UPDATE event
+    explainAlert(enrichedAlert).catch(err => {
+        console.error('[llm] Unhandled error:', err.message);
+    });
 
     res.json({ status: 'success', data });
 });

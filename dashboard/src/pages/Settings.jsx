@@ -17,7 +17,9 @@ const Settings = () => {
     strike_threshold: 5,
     window_minutes: 5,
     email_notifications: false,
-    alert_email: ''
+    alert_email: '',
+    llm_enabled: true,
+    llm_min_severity: 'high'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -167,6 +169,64 @@ const Settings = () => {
                     onChange={(e) => setSettings({...settings, alert_email: e.target.value})}
                     className="w-full bg-border/20 border border-border text-white px-4 py-3 rounded-xl focus:outline-none focus:border-warning transition-all text-sm font-mono"
                 />
+            </div>
+          </div>
+        </section>
+
+        {/* AI Explanation Engine */}
+        <section className="glass-card overflow-hidden">
+          <div className="p-4 bg-white/5 border-b border-border flex items-center gap-2">
+            <Zap className="h-4 w-4 text-purple-500" />
+            <h2 className="text-sm font-bold uppercase tracking-widest text-gray-300">AI Explanation Engine</h2>
+          </div>
+          <div className="p-6 space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-white">Cloud AI Analysis</h3>
+                <p className="text-xs text-gray-400 max-w-sm">Use Claude Haiku to generate plain-English summaries for security alerts.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                    type="checkbox" 
+                    checked={settings.llm_enabled}
+                    onChange={(e) => setSettings({...settings, llm_enabled: e.target.checked})}
+                    className="sr-only peer" 
+                />
+                <div className="w-11 h-6 bg-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 shadow-inner"></div>
+              </label>
+            </div>
+
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 transition-opacity ${!settings.llm_enabled && 'opacity-30 pointer-events-none'}`}>
+              <div className="space-y-4">
+                <label className="text-sm font-bold text-gray-400">Response Threshold</label>
+                <select 
+                    value={settings.llm_min_severity}
+                    onChange={(e) => setSettings({...settings, llm_min_severity: e.target.value})}
+                    className="w-full bg-border/20 border border-border text-white px-4 py-2.5 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                >
+                    <option value="medium">Medium +</option>
+                    <option value="high">High +</option>
+                    <option value="critical">Critical Only</option>
+                </select>
+                <p className="text-[10px] text-gray-600 italic">Lowering this will increase API usage and potentially costs.</p>
+              </div>
+
+              <div className="space-y-2">
+                 <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-black/20 border border-white/5">
+                    <div className="flex justify-between text-[10px] font-bold">
+                        <span className="text-gray-500 uppercase">Rate Limit</span>
+                        <span className="text-purple-500">20 REQ / MIN</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold">
+                        <span className="text-gray-500 uppercase">Provider</span>
+                        <span className="text-purple-500">CLAUDE HAIKU</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold">
+                        <span className="text-gray-500 uppercase">Mode</span>
+                        <span className="text-purple-500">ASYNCHRONOUS</span>
+                    </div>
+                 </div>
+              </div>
             </div>
           </div>
         </section>

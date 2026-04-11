@@ -20,6 +20,22 @@ const AlertLog = () => {
 
   useEffect(() => {
     fetchAlerts();
+
+    // Realtime listener for explanation updates
+    const channel = supabase
+      .channel('alerts-explanation-updates')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'alerts'
+      }, (payload) => {
+        setAlerts(prev => prev.map(a =>
+          a.id === payload.new.id ? { ...a, ...payload.new } : a
+        ));
+      })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, [page, searchTerm]);
 
   const fetchAlerts = async () => {
@@ -143,15 +159,114 @@ const AlertLog = () => {
                     </span>
                   </td>
                   <td className="text-right">
-                    <button className="p-1 hover:bg-white/5 rounded text-gray-500">
-                        <SearchCode className="h-4 w-4" />
+                    <button 
+                      onClick={() => setExpandedRow(expandedRow === alert.id ? null : alert.id)}
+                      className={`p-1 hover:bg-white/5 rounded transition-all ${expandedRow === alert.id ? 'text-cyan-primary rotate-180' : 'text-gray-500'}`}
+                    >
+                        <ChevronDown className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                {expandedRow === alert.id && (
+                  <tr>
+                    <td colSpan={7} className="bg-[#0d1117] p-6 border-b border-border shadow-inner">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Raw Alert Data */}
+                        <div className="space-y-4">
+                          <p className="text-[#06b6d4] text-[10px] font-bold tracking-widest uppercase flex items-center gap-2">
+                             <div className="h-1.5 w-1.5 rounded-full bg-cyan-primary" />
+                             Raw Telemetry
+                          </p>
+                          <div className="font-mono text-[11px] text-gray-500 space-y-2 bg-black/20 p-4 rounded-lg border border-white/5">
+                            <div className="flex justify-between">
+                                <span>Signature:</span> 
+                                <span className="text-gray-300">{alert.signature}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Protocol:</span> 
+                                <span className="text-gray-300">{alert.proto}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Ports:</span> 
+                                <span className="text-gray-300">{alert.src_port} → {alert.dest_port}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Category:</span> 
+                                <span className="text-gray-300">{alert.category}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Aggregated:</span> 
+                                <span className="text-gray-300">{alert.grouped ? `Yes (×${alert.count})` : 'No'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* LLM Explanation */}
+                        <div className="space-y-4">
+                          <p className="text-[#8b5cf6] text-[10px] font-bold tracking-widest uppercase flex items-center gap-2">
+                             <div className="h-1.5 w-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
+                             AI Threat Insight
+                          </p>
+                          <div className="bg-purple-500/5 p-4 rounded-xl border border-purple-500/10 min-h-[150px] flex flex-col justify-center">
+                            {alert.explanation_status === 'pending' && (
+                                <div className="flex flex-col items-center gap-3 py-6">
+                                    <div className="h-5 w-5 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+                                    <p className="text-xs text-gray-500 italic font-medium">Analyzing threat patterns with AI...</p>
+                                </div>
+                            )}
+
+                            {alert.explanation_status === 'skipped' && (
+                                <p className="text-xs text-gray-500 italic text-center py-6">Insight unavailable (rate limited)</p>
+                            )}
+
+                            {alert.explanation_status === 'failed' && (
+                                <p className="text-xs text-danger/50 italic text-center py-6">Failed to generate AI insight</p>
+                            )}
+
+                            {alert.explanation_status === 'generated' && alert.explanation && (() => {
+                                let parsed;
+                                try { parsed = JSON.parse(alert.explanation); } 
+                                catch { return <div className="text-danger">Parse error</div>; }
+                                
+                                const threatColor = {
+                                  'Low Risk': 'text-success border-success bg-success/10',
+                                  'Moderate Risk': 'text-warning border-warning bg-warning/10',
+                                  'High Risk': 'text-orange-500 border-orange-500 bg-orange-500/10',
+                                  'Critical Threat': 'text-danger border-danger bg-danger/10'
+                                }[parsed.threat_level] || 'text-gray-500 border-gray-500';
+
+                                return (
+                                  <div className="space-y-4">
+                                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${threatColor}`}>
+                                        {parsed.threat_level?.toUpperCase()}
+                                     </span>
+
+                                     <div className="space-y-3">
+                                        {[
+                                          { label: '🔍 Situation', value: parsed.what_happened },
+                                          { label: '⚠️ Exposure', value: parsed.why_it_matters },
+                                          { label: '✅ Guidance', value: parsed.action }
+                                        ].map(({ label, value }) => (
+                                          <div key={label}>
+                                            <p className="text-[10px] font-bold text-gray-600 mb-0.5">{label}</p>
+                                            <p className="text-[13px] text-gray-300 leading-relaxed">{value}</p>
+                                          </div>
+                                        ))}
+                                     </div>
+                                  </div>
+                                );
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
         {/* Pagination */}
         <div className="p-4 border-t border-border flex items-center justify-between bg-white/2">
