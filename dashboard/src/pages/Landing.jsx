@@ -206,16 +206,16 @@ const FaqItem = ({ q, a }) => {
   return (
     <div
       onClick={() => setOpen(!open)}
-      style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 24px', cursor: 'pointer', transition: 'all 0.2s' }}
+      className="bg-[#111827] border border-gray-800 rounded-2xl p-6 cursor-pointer hover:border-gray-700 transition-all"
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
-        <span style={{ fontSize: 15, color: '#0a0a0a', fontWeight: 500 }}>{q}</span>
-        <div style={{ width: 28, height: 28, borderRadius: 999, background: '#0a0a0a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'transform 0.3s', transform: open ? 'rotate(45deg)' : 'none' }}>
+      <div className="flex justify-between items-center gap-4">
+        <span className="text-base text-white font-medium">{q}</span>
+        <div className={`w-7 h-7 rounded-full bg-[#1f2937] text-white flex items-center justify-center shrink-0 transition-transform duration-300 ${open ? 'rotate-45' : ''}`}>
           <Plus size={14} />
         </div>
       </div>
-      <div style={{ maxHeight: open ? 200 : 0, overflow: 'hidden', transition: 'max-height 0.4s ease' }}>
-        <p style={{ paddingTop: 12, fontSize: 14, color: '#6b7280', lineHeight: 1.7 }}>{a}</p>
+      <div className={`overflow-hidden transition-all duration-400 ease-in-out ${open ? 'max-h-52' : 'max-h-0'}`}>
+        <p className="pt-4 text-sm text-gray-400 leading-relaxed">{a}</p>
       </div>
     </div>
   );
@@ -255,31 +255,31 @@ const ContactForm = () => {
   };
 
   return (
-    <section id="contact" style={{ background: '#f9fafb', padding: '120px 40px', borderTop: '1px solid #f0f0f0' }}>
-      <div className="reveal" style={{ maxWidth: 600, margin: '0 auto', background: 'white', borderRadius: 24, padding: 48, boxShadow: '0 12px 40px rgba(0,0,0,0.06)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <h2 className="font-display" style={{ fontSize: 40, fontWeight: 700, color: '#0a0a0a', marginBottom: 12 }}>Get in Touch</h2>
-          <p style={{ color: '#6b7280', fontSize: 16 }}>Have a question or need a custom solution? Send us a message.</p>
+    <section id="contact" className="bg-[#111827] py-16 px-10 border-t border-gray-800">
+      <div className="reveal max-w-2xl mx-auto bg-[#0a0f1e] rounded-3xl p-12 shadow-2xl border border-gray-800">
+        <div className="text-center mb-10">
+          <h2 className="font-display text-4xl font-bold text-white mb-3">Get in Touch</h2>
+          <p className="text-gray-300 text-base">Have a question or need a custom solution? Send us a message.</p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Name</label>
-            <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9fafb', fontSize: 15, outline: 'none' }} placeholder="John Doe" />
+            <label className="block text-sm font-semibold text-gray-300 mb-2">Name</label>
+            <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-gray-700 bg-[#1f2937] text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all" placeholder="John Doe" />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Email</label>
-            <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9fafb', fontSize: 15, outline: 'none' }} placeholder="john@company.com" />
+            <label className="block text-sm font-semibold text-gray-300 mb-2">Email</label>
+            <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-gray-700 bg-[#1f2937] text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all" placeholder="john@company.com" />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Message</label>
-            <textarea required value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} rows={4} style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9fafb', fontSize: 15, outline: 'none', resize: 'none' }} placeholder="Tell us about your network..." />
+            <label className="block text-sm font-semibold text-gray-300 mb-2">Message</label>
+            <textarea required value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} rows={4} className="w-full px-4 py-3 rounded-lg border border-gray-700 bg-[#1f2937] text-white placeholder-gray-500 outline-none resize-none focus:ring-2 focus:ring-cyan-500/50 transition-all" placeholder="Tell us about your network..." />
           </div>
 
-          {status === 'success' && <div style={{ padding: 12, background: '#dcfce7', color: '#16a34a', borderRadius: 8, fontSize: 14, textAlign: 'center' }}>Message sent successfully! We'll be in touch soon.</div>}
-          {status === 'error' && <div style={{ padding: 12, background: '#fee2e2', color: '#dc2626', borderRadius: 8, fontSize: 14, textAlign: 'center' }}>Something went wrong. Please try again later.</div>}
+          {status === 'success' && <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg text-sm text-center border border-emerald-500/20">Message sent successfully! We'll be in touch soon.</div>}
+          {status === 'error' && <div className="p-3 bg-red-500/10 text-red-500 rounded-lg text-sm text-center border border-red-500/20">Something went wrong. Please try again later.</div>}
 
-          <button disabled={status === 'loading'} style={{ background: '#0a0a0a', color: 'white', borderRadius: 8, padding: 16, fontSize: 15, fontWeight: 600, cursor: status === 'loading' ? 'not-allowed' : 'pointer', border: 'none', marginTop: 8 }}>
+          <button disabled={status === 'loading'} className="mt-2 w-full py-4 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-white font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {status === 'loading' ? 'Sending...' : 'Send Message'}
           </button>
         </form>
@@ -322,7 +322,7 @@ const Landing = () => {
   const sevColor = { CRITICAL: '#ef4444', HIGH: '#f97316', MEDIUM: '#f59e0b', LOW: '#94a3b8' };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", color: '#0a0a0a' }}>
+    <div className="bg-[#0a0f1e] text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
       <LandingNav />
 
       {/* ── HERO ── */}
@@ -411,40 +411,40 @@ const Landing = () => {
       </section>
 
       {/* ── TRUST LOGOS ── */}
-      <section style={{ background: 'white', padding: '48px 40px', borderBottom: '1px solid #f0f0f0', textAlign: 'center' }}>
-        <p style={{ color: '#9ca3af', fontSize: 12, letterSpacing: 2, marginBottom: 24, textTransform: 'uppercase', fontWeight: 600 }}>Powered by open source technology</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+      <section className="bg-[#111827] py-16 px-10 border-b border-gray-800 text-center">
+        <p className="text-gray-400 text-xs tracking-widest mb-6 uppercase font-semibold">Powered by open source technology</p>
+        <div className="flex justify-center gap-4 flex-wrap">
           {['Suricata', 'MaxMind', 'Supabase', 'Anthropic AI', 'Vercel'].map((n) => (
-            <span key={n} style={{ border: '1px solid #e5e7eb', borderRadius: 999, padding: '12px 24px', fontSize: 14, color: '#6b7280', fontWeight: 500 }}>{n}</span>
+            <span key={n} className="border border-gray-700 rounded-full px-6 py-3 text-sm text-gray-300 font-medium">{n}</span>
           ))}
         </div>
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" style={{ background: 'white', padding: '120px 40px' }}>
-        <div ref={featRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <p style={{ color: '#6b7280', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16, fontWeight: 600 }}>FEATURES</p>
-            <h2 className="font-display" style={{ fontSize: 48, fontWeight: 700, color: '#0a0a0a', marginBottom: 16 }}>Everything you need to stay protected</h2>
-            <p style={{ color: '#6b7280', fontSize: 18 }}>Built for business owners, not security experts.</p>
+      <section id="features" className="bg-[#0a0f1e] py-16 px-10">
+        <div ref={featRef} className="reveal max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-gray-400 text-xs tracking-widest uppercase mb-4 font-semibold">FEATURES</p>
+            <h2 className="font-display text-5xl font-bold text-white mb-4">Everything you need to stay protected</h2>
+            <p className="text-gray-300 text-lg">Built for business owners, not security experts.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }} className="reveal-children">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 reveal-children">
             {[
-              { title: 'Real-Time Detection', desc: 'Suricata IDS engine monitors every packet on your network, 24/7.', bg: '#f0fdf4', mockup: (
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#16a34a', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              { title: 'Real-Time Detection', desc: 'Suricata IDS engine monitors every packet on your network, 24/7.', mockup: (
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#10b981', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <span>→ Suricata listening on eth0</span>
                   <span>→ Packet captured: 192.168.1.1</span>
                   <span style={{ color: '#ef4444' }}>→ ALERT: ET SCAN detected</span>
                 </div>
               )},
-              { title: 'AI Threat Explanation', desc: 'Claude AI explains every alert in plain English — no security degree required.', bg: '#faf5ff', mockup: (
+              { title: 'AI Threat Explanation', desc: 'Claude AI explains every alert in plain English — no security degree required.', mockup: (
                 <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ background: '#1e1e2e', borderRadius: '12px 12px 12px 2px', padding: '10px 14px', fontSize: 12, color: 'white', maxWidth: '85%', fontWeight: 500 }}>ET SCAN SSH brute force probe</div>
-                  <div style={{ background: 'white', borderRadius: '12px 12px 2px 12px', padding: '10px 14px', fontSize: 12, color: '#374151', maxWidth: '90%', alignSelf: 'flex-end', border: '1px solid #e5e7eb', lineHeight: 1.5 }}>An attacker from Germany is trying to break into your SSH server using automated password guessing…</div>
+                  <div style={{ background: '#1f2937', borderRadius: '12px 12px 12px 2px', padding: '10px 14px', fontSize: 12, color: 'white', maxWidth: '85%', fontWeight: 500 }}>ET SCAN SSH brute force probe</div>
+                  <div style={{ background: '#374151', borderRadius: '12px 12px 2px 12px', padding: '10px 14px', fontSize: 12, color: '#e5e7eb', maxWidth: '90%', alignSelf: 'flex-end', border: '1px solid #4b5563', lineHeight: 1.5 }}>An attacker from Germany is trying to break into your SSH server using automated password guessing…</div>
                 </div>
               )},
-              { title: 'Auto-Block Engine', desc: 'Malicious IPs are automatically blocked the moment they cross your threshold.', bg: '#fff1f2', mockup: (
+              { title: 'Auto-Block Engine', desc: 'Malicious IPs are automatically blocked the moment they cross your threshold.', mockup: (
                 <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <span style={{ color: '#ef4444' }}>45.33.32.156 ✗ BLOCKED</span>
                   <span style={{ color: '#ef4444' }}>192.241.218.x ✗ BLOCKED</span>
@@ -452,9 +452,9 @@ const Landing = () => {
                   <span style={{ color: '#9ca3af', marginTop: 4 }}>3 IPs quarantined today</span>
                 </div>
               )},
-              { title: 'Global Threat Map', desc: 'See exactly where attacks are coming from on a live world map.', bg: '#eff6ff', mockup: (
+              { title: 'Global Threat Map', desc: 'See exactly where attacks are coming from on a live world map.', mockup: (
                 <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg viewBox="0 0 200 100" width="160" style={{ opacity: 0.15 }}><ellipse cx="100" cy="50" rx="90" ry="40" fill="none" stroke="#0a0a0a" strokeWidth="0.5" /><line x1="10" y1="50" x2="190" y2="50" stroke="#0a0a0a" strokeWidth="0.3" /><line x1="100" y1="10" x2="100" y2="90" stroke="#0a0a0a" strokeWidth="0.3" /></svg>
+                  <svg viewBox="0 0 200 100" width="160" style={{ opacity: 0.15 }}><ellipse cx="100" cy="50" rx="90" ry="40" fill="none" stroke="#fff" strokeWidth="0.5" /><line x1="10" y1="50" x2="190" y2="50" stroke="#fff" strokeWidth="0.3" /><line x1="100" y1="10" x2="100" y2="90" stroke="#fff" strokeWidth="0.3" /></svg>
                   {[[60, 35], [130, 45], [80, 55], [150, 30]].map(([cx, cy], i) => (
                     <React.Fragment key={i}>
                       <span style={{ position: 'absolute', left: cx * 0.8, top: cy * 2, width: 6, height: 6, borderRadius: 99, background: '#ef4444' }} />
@@ -463,27 +463,27 @@ const Landing = () => {
                   ))}
                 </div>
               )},
-              { title: '40,000+ Signatures', desc: 'Emerging Threats ruleset keeps you protected against known attack patterns.', bg: '#f0fdf4', mockup: (
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#374151', padding: 20, display: 'flex', flexDirection: 'column', gap: 6, overflow: 'hidden', height: '100%' }}>
+              { title: '40,000+ Signatures', desc: 'Emerging Threats ruleset keeps you protected against known attack patterns.', mockup: (
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#9ca3af', padding: 20, display: 'flex', flexDirection: 'column', gap: 6, overflow: 'hidden', height: '100%' }}>
                   {['ET SCAN Nmap -sS', 'ET DOS SYN flood', 'ET MALWARE C2 callback', 'ET EXPLOIT CVE-2024-xxx', 'ET POLICY NTP monlist', 'ET SCAN SSH brute'].map((r, i) => (
                     <span key={i} style={{ opacity: 0.4 + i * 0.1 }}>{r}</span>
                   ))}
                 </div>
               )},
-              { title: 'Runs on Raspberry Pi', desc: 'Deploy on affordable hardware. Full enterprise protection for under ₹5,000 setup cost.', bg: '#fefce8', mockup: (
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#374151', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              { title: 'Runs on Raspberry Pi', desc: 'Deploy on affordable hardware. Full enterprise protection for under ₹5,000 setup cost.', mockup: (
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#9ca3af', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <span>Device: Raspberry Pi 4</span>
                   <span>RAM: 2GB</span>
                   <span>Storage: 32GB SD</span>
-                  <span style={{ color: '#16a34a', fontWeight: 600 }}>Cost: ~₹4,000</span>
+                  <span style={{ color: '#10b981', fontWeight: 600 }}>Cost: ~₹4,000</span>
                 </div>
               )},
             ].map((f, i) => (
-              <div key={i} className="reveal" style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', transition: 'transform 0.3s, box-shadow 0.3s', cursor: 'default' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}>
-                <div style={{ height: 200, background: f.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>{f.mockup}</div>
-                <div style={{ padding: 24 }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0a0a0a', marginBottom: 8 }}>{f.title}</h3>
-                  <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>{f.desc}</p>
+              <div key={i} className="reveal bg-[#111827] border border-gray-800 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-cyan-500/10 cursor-default">
+                <div style={{ height: 200, background: '#0a0f1e', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>{f.mockup}</div>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-white mb-2">{f.title}</h3>
+                  <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
                 </div>
               </div>
             ))}
@@ -492,25 +492,25 @@ const Landing = () => {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" style={{ background: '#0f0f0f', padding: 0, position: 'relative' }}>
-        <PulseBeams beams={beamsData} gradientColors={gradientColorsConfig} className="bg-slate-950 py-[120px]">
-        <div ref={howRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center', padding: '0 40px' }}>
-          <h2 className="font-display" style={{ fontSize: 56, color: 'white', fontWeight: 700, marginBottom: 16 }}>Protect your network in 3 easy steps</h2>
-          <p style={{ color: '#9ca3af', fontSize: 18, marginBottom: 80 }}>From setup to protection in under an hour</p>
+      <section id="how-it-works" className="bg-[#111827] relative">
+        <PulseBeams beams={beamsData} gradientColors={gradientColorsConfig} className="bg-[#111827] py-16">
+        <div ref={howRef} className="reveal max-w-6xl mx-auto text-center px-10">
+          <h2 className="font-display text-5xl text-white font-bold mb-4">Protect your network in 3 easy steps</h2>
+          <p className="text-gray-300 text-lg mb-16">From setup to protection in under an hour</p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { num: '01', title: 'Install on Raspberry Pi', text: 'Run our one-command setup script. Suricata and all dependencies install automatically.', code: './setup.sh' },
               { num: '02', title: 'Connect to your router', text: 'Plug your Pi into your router via ethernet. Synera instantly begins monitoring all network traffic.', code: null },
               { num: '03', title: 'Open your dashboard', text: 'Log into your secure dashboard from any browser. See threats, AI explanations, and blocked IPs live.', code: null },
             ].map((step, i) => (
-              <div key={i} style={{ background: '#1a1a1a', border: `1px solid ${activeStep === i ? '#444' : '#2a2a2a'}`, borderRadius: 16, padding: 32, textAlign: 'left', transition: 'border-color 0.4s', zIndex: 10 }}>
-                <span style={{ fontSize: 12, color: '#4b5563', fontWeight: 700, letterSpacing: 2 }}>{step.num}</span>
-                <h3 style={{ fontSize: 20, color: 'white', fontWeight: 700, margin: '16px 0 12px' }}>{step.title}</h3>
-                <p style={{ fontSize: 14, color: '#9ca3af', lineHeight: 1.7, marginBottom: step.code ? 20 : 0 }}>{step.text}</p>
+              <div key={i} className={`bg-[#0a0f1e] border rounded-2xl p-8 text-left transition-colors duration-400 z-10 ${activeStep === i ? 'border-gray-600' : 'border-gray-800'}`}>
+                <span className="text-xs text-gray-500 font-bold tracking-widest">{step.num}</span>
+                <h3 className="text-xl text-white font-bold my-4">{step.title}</h3>
+                <p className={`text-sm text-gray-400 leading-relaxed ${step.code ? 'mb-5' : ''}`}>{step.text}</p>
                 {step.code && (
-                  <div style={{ background: '#111', border: '1px solid #333', borderRadius: 8, padding: 12 }}>
-                    <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#10b981' }}>{step.code}</code>
+                  <div className="bg-[#111] border border-gray-800 rounded-lg p-3">
+                    <code className="font-mono text-sm text-emerald-400">{step.code}</code>
                   </div>
                 )}
               </div>
@@ -521,52 +521,50 @@ const Landing = () => {
       </section>
 
       {/* ── STATS ── */}
-      <section style={{ background: 'white', padding: '80px 40px', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0' }}>
-        <div ref={statsRef} className="reveal" style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1px 1fr 1px 1fr', alignItems: 'center', textAlign: 'center', gap: 0 }}>
+      <section className="bg-[#0a0f1e] py-16 px-10 border-y border-gray-800">
+        <div ref={statsRef} className="reveal max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between text-center gap-8 md:gap-0">
           {[
             { num: '40,000+', label: 'Threat Signatures' },
-            null,
             { num: '<3s', label: 'Detection Time' },
-            null,
             { num: '100%', label: 'Open Source' },
-          ].map((item, i) =>
-            item === null ? (
-              <div key={i} style={{ width: 1, height: 60, background: '#e5e7eb', margin: '0 auto' }} />
-            ) : (
-              <div key={i}>
-                <h2 className="font-display" style={{ fontSize: 56, fontWeight: 700, color: '#0a0a0a' }}>{item.num}</h2>
-                <p style={{ fontSize: 14, color: '#6b7280', marginTop: 8 }}>{item.label}</p>
+          ].map((item, i) => (
+            <React.Fragment key={i}>
+              <div className="flex-1 w-full">
+                <h2 className="font-display text-5xl font-bold text-white">{item.num}</h2>
+                <p className="text-sm text-gray-400 mt-2">{item.label}</p>
               </div>
-            )
-          )}
+              {i < 2 && <div className="hidden md:block w-[1px] h-16 bg-gray-800" />}
+            </React.Fragment>
+          ))}
         </div>
       </section>
 
       {/* ── PRICING ── */}
-      <section id="pricing" style={{ background: 'white', padding: '120px 40px' }}>
-        <div ref={pricingRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <h2 className="font-display" style={{ fontSize: 56, fontWeight: 700, color: '#0a0a0a', marginBottom: 16 }}>Pricing Plan</h2>
-            <p style={{ color: '#6b7280', fontSize: 18 }}>Simple, transparent pricing. Cancel anytime.</p>
+      <section id="pricing" className="bg-[#111827] py-16 px-10">
+        <div ref={pricingRef} className="reveal max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-5xl font-bold text-white mb-4">Pricing Plan</h2>
+            <p className="text-gray-300 text-lg">Simple, transparent pricing. Cancel anytime.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 24, alignItems: 'stretch' }}>
+          <div className="grid grid-cols-1 md:grid-cols-[1.2fr_0.8fr] gap-6 items-stretch">
             {/* Business — featured */}
-            <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 20, padding: 40, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <h3 style={{ fontSize: 20, fontWeight: 700, color: '#0a0a0a' }}>Business Plan</h3>
-                <span style={{ background: '#0a0a0a', color: 'white', borderRadius: 999, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>Most Popular</span>
+            <div className="bg-[#0a0f1e] border border-gray-800 rounded-3xl p-10 flex flex-col relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none" />
+              <div className="flex items-center justify-between mb-2 relative z-10">
+                <h3 className="text-xl font-bold text-white">Business Plan</h3>
+                <span className="bg-cyan-500 text-white rounded-full px-3 py-1 text-xs font-bold">Most Popular</span>
               </div>
-              <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 20 }}>Best for small teams</p>
-              <p style={{ fontSize: 48, fontWeight: 700, color: '#0a0a0a', marginBottom: 24 }}>₹2,999<span style={{ fontSize: 16, fontWeight: 400, color: '#6b7280' }}>/mo</span></p>
-              <button style={{ width: '100%', background: '#0a0a0a', color: 'white', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', marginBottom: 32 }}>Download Now</button>
+              <p className="text-sm text-gray-400 mb-5 relative z-10">Best for small teams</p>
+              <p className="text-5xl font-bold text-white mb-6 relative z-10">₹2,999<span className="text-base font-normal text-gray-500">/mo</span></p>
+              <button className="w-full bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl py-4 text-base font-bold transition-colors mb-8 relative z-10 cursor-pointer">Download Now</button>
 
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 24 }}>
-                <p style={{ fontSize: 12, color: '#6b7280', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600, marginBottom: 20 }}>What's Included</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="border-t border-gray-800 pt-6 relative z-10">
+                <p className="text-xs text-gray-500 tracking-widest uppercase font-bold mb-5">What's Included</p>
+                <div className="flex flex-col gap-3">
                   {['3 networks monitored', 'Unlimited alerts per day', 'AI explanations on every threat', 'Auto-block malicious IPs', 'Global threat map', 'Priority email support', 'Weekly threat summary report'].map((f) => (
-                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, color: '#374151' }}>
-                      <span style={{ width: 20, height: 20, borderRadius: 999, background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>✓</span>
+                    <div key={f} className="flex items-center gap-3 text-sm text-gray-300">
+                      <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold shrink-0">✓</span>
                       {f}
                     </div>
                   ))}
@@ -575,49 +573,49 @@ const Landing = () => {
             </div>
 
             {/* Right stack */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div className="flex flex-col gap-6">
               {/* Starter */}
-              <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 16, padding: 28, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div className="bg-[#0a0f1e] border border-gray-800 rounded-2xl p-7 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0a0a0a', marginBottom: 4 }}>Starter</h3>
-                  <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>For solo entrepreneurs</p>
-                  <p style={{ fontSize: 36, fontWeight: 700, color: '#0a0a0a' }}>₹999<span style={{ fontSize: 14, fontWeight: 400, color: '#6b7280' }}>/mo</span></p>
+                  <h3 className="text-lg font-bold text-white mb-1">Starter</h3>
+                  <p className="text-xs text-gray-400 mb-4">For solo entrepreneurs</p>
+                  <p className="text-4xl font-bold text-white">₹999<span className="text-sm font-normal text-gray-500">/mo</span></p>
                 </div>
-                <button style={{ width: '100%', background: 'transparent', border: '1px solid #e5e7eb', borderRadius: 12, padding: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#0a0a0a', marginTop: 20 }}>Download Now</button>
+                <button className="w-full bg-transparent border border-gray-700 hover:border-gray-500 hover:bg-gray-800 text-white rounded-xl py-3 text-sm font-bold transition-colors mt-5 cursor-pointer">Download Now</button>
               </div>
 
               {/* Enterprise */}
-              <div style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 16, padding: 28, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div className="bg-[#0a0f1e] border border-gray-800 rounded-2xl p-7 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 4 }}>Enterprise</h3>
-                  <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>Unlimited everything</p>
-                  <p style={{ fontSize: 36, fontWeight: 700, color: 'white' }}>₹7,999<span style={{ fontSize: 14, fontWeight: 400, color: '#9ca3af' }}>/mo</span></p>
+                  <h3 className="text-lg font-bold text-white mb-1">Enterprise</h3>
+                  <p className="text-xs text-gray-400 mb-4">Unlimited everything</p>
+                  <p className="text-4xl font-bold text-white">₹7,999<span className="text-sm font-normal text-gray-500">/mo</span></p>
                 </div>
-                <button style={{ width: '100%', background: 'transparent', border: '1px solid #444', borderRadius: 12, padding: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'white', marginTop: 20 }}>Contact Us</button>
+                <button className="w-full bg-transparent border border-gray-700 hover:border-gray-500 hover:bg-gray-800 text-white rounded-xl py-3 text-sm font-bold transition-colors mt-5 cursor-pointer">Contact Us</button>
               </div>
             </div>
           </div>
 
           {/* All plans include */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 40, flexWrap: 'wrap' }}>
+          <div className="flex justify-center gap-3 mt-10 flex-wrap">
             {['Real-time Detection', 'AI Analysis', 'Auto-blocking', 'Threat Map'].map((p) => (
-              <span key={p} style={{ border: '1px solid #e5e7eb', borderRadius: 999, padding: '8px 18px', fontSize: 13, color: '#6b7280' }}>{p}</span>
+              <span key={p} className="border border-gray-700 rounded-full px-5 py-2 text-sm text-gray-400">{p}</span>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" style={{ background: 'white', padding: '120px 40px' }}>
-        <div ref={faqRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <h2 className="font-display" style={{ fontSize: 56, fontWeight: 700, color: '#0a0a0a', textAlign: 'center', marginBottom: 64 }}>Frequently Asked Questions</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: 16 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <section id="faq" className="bg-[#0a0f1e] py-16 px-10 border-b border-gray-800">
+        <div ref={faqRef} className="reveal max-w-6xl mx-auto">
+          <h2 className="font-display text-5xl font-bold text-white text-center mb-16">Frequently Asked Questions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-4">
               <FaqItem q="What is Synera?" a="Synera is a real-time network intrusion detection system that monitors your business network and alerts you to cyber threats." />
               <FaqItem q="Do I need IT experience?" a="Not at all. Synera's AI explains every alert in plain English. If you can read an email, you can understand our alerts." />
               <FaqItem q="What hardware do I need?" a="A Raspberry Pi 4 (around ₹4,000) connected to your router via ethernet cable. That's it." />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="flex flex-col gap-4">
               <FaqItem q="Is my data stored securely?" a="Yes. All alerts are stored in your private Supabase database. We never access your data." />
               <FaqItem q="How quickly does it detect threats?" a="Synera detects most threats in under 3 seconds of the malicious packet hitting your network." />
               <FaqItem q="Can I cancel my subscription?" a="Yes, cancel anytime from your account settings. No long-term commitments." />
