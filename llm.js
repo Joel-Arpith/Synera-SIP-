@@ -1,173 +1,98 @@
-/**
- * LLM Alert Explanation Engine
- * Calls Claude Haiku only for HIGH/CRITICAL alerts.
- * Async fire-and-forget — never blocks alert pipeline.
- * Rate limited to prevent cost spikes during DDoS.
- */
-
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_ANON_KEY
 );
 
-// ─── Rate Limiter ────────────────────────────────────────
-class RateLimiter {
-  constructor(maxPerMinute) {
-    this.max = maxPerMinute;
-    this.calls = [];
-  }
-
-  canCall() {
-    const now = Date.now();
-    const oneMinuteAgo = now - 60000;
-    // Drop calls older than 1 minute
-    this.calls = this.calls.filter(t => t > oneMinuteAgo);
-    if (this.calls.length >= this.max) return false;
-    this.calls.push(now);
-    return true;
-  }
-
-  queueSize() {
-    return this.calls.length;
-  }
-}
-
-const rateLimiter = new RateLimiter(
-  parseInt(process.env.LLM_RATE_LIMIT_PER_MINUTE) || 20
-);
-
-// ─── Severity Gate ───────────────────────────────────────
-const SEVERITY_LEVELS = { low: 0, medium: 1, high: 2, critical: 3 };
-const MIN_SEVERITY = process.env.LLM_MIN_SEVERITY || 'high';
-
-function shouldExplain(severity) {
-  if (process.env.LLM_ENABLED !== 'true') return false;
-  if (!process.env.ANTHROPIC_API_KEY) return false;
-  return (SEVERITY_LEVELS[severity] || 0) >= 
-         (SEVERITY_LEVELS[MIN_SEVERITY] || 2);
-}
-
-// ─── Prompt Builder ──────────────────────────────────────
-function buildPrompt(alert) {
-  return `You are a cybersecurity analyst explaining a network alert to a non-technical small business owner.
-
-Alert details:
-- What triggered: ${alert.signature}
-- Attack category: ${alert.attack_type}
-- Attacker IP: ${alert.src_ip}
-- Attacker location: ${alert.city || 'Unknown'}, ${alert.country || 'Unknown'}
-- Target port: ${alert.dest_port} (${getPortService(alert.dest_port)})
-- Protocol: ${alert.proto}
-- Severity: ${alert.severity.toUpperCase()}
-- Times seen: ${alert.count || 1}
-
-Respond in exactly this JSON format, nothing else:
-{
-  "what_happened": "One sentence, plain English, what the attacker did.",
-  "why_it_matters": "One sentence, what damage this could cause.",
-  "action": "One sentence, what the business owner should do right now.",
-  "threat_level": "One of: Low Risk / Moderate Risk / High Risk / Critical Threat"
-}
-
-Rules:
-- No technical jargon
-- No speculation beyond the data given
-- No mention of IP reputation unless country is known high-risk
-- Max 20 words per field
-- Always recommend action even if just "Monitor closely"`;
-}
-
-// ─── Port → Service Name ─────────────────────────────────
-function getPortService(port) {
-  const services = {
-    21: 'FTP', 22: 'SSH', 23: 'Telnet', 25: 'SMTP',
-    53: 'DNS', 80: 'HTTP', 110: 'POP3', 143: 'IMAP',
-    443: 'HTTPS', 445: 'SMB/Windows File Share',
-    3306: 'MySQL Database', 3389: 'Remote Desktop (RDP)',
-    5432: 'PostgreSQL Database', 6379: 'Redis',
-    8080: 'Web Server', 8443: 'HTTPS Alternate',
-    27017: 'MongoDB Database'
-  };
-  return services[port] || 'Unknown Service';
-}
-
-// ─── Claude API Call ─────────────────────────────────────
-async function callClaude(prompt) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: parseInt(process.env.LLM_MAX_TOKENS) || 200,
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Claude API error ${response.status}: ${err}`);
-  }
-
-  const data = await response.json();
-  const text = data.content
-    .filter(b => b.type === 'text')
-    .map(b => b.text)
-    .join('');
-
-  // Strip markdown fences if present
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
-}
-
-// ─── Main Export ─────────────────────────────────────────
-/**
- * Fire-and-forget. Call this AFTER saving alert to Supabase.
- * Updates the explanation field async — never blocks pipeline.
- */
 async function explainAlert(alert) {
-  // Gate checks
-  if (!shouldExplain(alert.severity)) return;
-  if (!rateLimiter.canCall()) {
-    console.log(`[llm] Rate limit hit. Queue: ${rateLimiter.queueSize()}/min`);
-    await updateExplanationStatus(alert.id, null, 'skipped');
-    return;
-  }
-
-  console.log(`[llm] Generating explanation for alert ${alert.id}`);
-
   try {
-    const prompt = buildPrompt(alert);
-    const explanation = await callClaude(prompt);
+    if (!alert || !alert.id) {
+      console.error('[llm] Invalid alert object provided');
+      return;
+    }
 
-    // Save structured explanation back to Supabase
-    await supabase
+    if (process.env.LLM_ENABLED !== 'true') {
+      console.log('[llm] AI explanations are disabled in settings');
+      return;
+    }
+
+    // Checking severity threshold
+    const minSeverity = process.env.LLM_MIN_SEVERITY || 'high';
+    const severities = ['low', 'medium', 'high', 'critical'];
+    if (severities.indexOf(alert.severity) < severities.indexOf(minSeverity)) {
+      console.log(`[llm] Skipping explanation: alert severity (${alert.severity}) below threshold (${minSeverity})`);
+      await supabase.from('alerts').update({ explanation_status: 'skipped' }).eq('id', alert.id);
+      return;
+    }
+
+    console.log(`[llm] Generating explanation for alert ${alert.id}...`);
+
+    const prompt = `
+      You are an expert Cybersecurity Analyst. Explain this network intrusion alert to a non-technical small business owner.
+      
+      Alert Details:
+      - Time: ${alert.timestamp}
+      - Signature: ${alert.signature}
+      - Category: ${alert.category}
+      - Source IP: ${alert.src_ip} (${alert.city || 'Unknown'}, ${alert.country || 'Unknown'})
+      - Target: ${alert.dest_ip}:${alert.dest_port}
+      - Protocol: ${alert.proto}
+      
+      Respond only with a JSON object in this format:
+      {
+        "situation": "What actually happened in plain English",
+        "exposure": "What the risk is to the business",
+        "guidance": "1-2 simple steps the owner should take"
+      }
+    `;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: parseInt(process.env.LLM_MAX_TOKENS) || 200,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const errorMsg = await res.text();
+      throw new Error(`Anthropic API error: ${res.status} - ${errorMsg}`);
+    }
+
+    const data = await res.json();
+    const text = data.content[0].text;
+
+    const { error: updateError } = await supabase
       .from('alerts')
       .update({
-        explanation: JSON.stringify(explanation),
+        explanation: text,
         explanation_status: 'generated',
         explanation_generated_at: new Date().toISOString()
       })
       .eq('id', alert.id);
 
-    console.log(`[llm] Explanation saved for alert ${alert.id}`);
+    if (updateError) throw updateError;
+
+    console.log(`[llm] Success: Explanation saved for alert ${alert.id}`);
 
   } catch (err) {
-    console.error(`[llm] Failed for alert ${alert.id}:`, err.message);
-    await updateExplanationStatus(alert.id, null, 'failed');
+    console.error(`[llm] Error for alert ${alert.id}:`, err.message);
+    const { error: failUpdateError } = await supabase
+      .from('alerts')
+      .update({ explanation_status: 'failed' })
+      .eq('id', alert.id);
+    
+    if (failUpdateError) {
+      console.error('[llm] Critical: Failed to update error status', failUpdateError.message);
+    }
   }
 }
 
-async function updateExplanationStatus(id, explanation, status) {
-  await supabase
-    .from('alerts')
-    .update({ explanation, explanation_status: status })
-    .eq('id', id);
-}
-
-module.exports = { explainAlert, shouldExplain };
+module.exports = { explainAlert };

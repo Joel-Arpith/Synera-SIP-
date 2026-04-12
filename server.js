@@ -134,6 +134,13 @@ async function blockIP(ip, reason, alertCount) {
 
 // Ingest from Python Log Tailer
 app.post('/api/ingest', async (req, res) => {
+    // 0. Secret Validation
+    const secret = req.headers['x-ingest-secret'];
+    if (secret !== process.env.INGEST_SECRET) {
+        console.warn(`[AUTH] Unauthorized ingestion attempt from ${req.ip}`);
+        return res.status(403).json({ error: 'Unauthorized: Invalid secret' });
+    }
+
     const alert = req.body;
     const { src_ip, signature, category, severity, timestamp } = alert;
 
@@ -212,7 +219,7 @@ app.post('/api/ingest', async (req, res) => {
     // ─── LLM Explanation (async, non-blocking) ──────────────
     // Fire and forget — explanation field updates in background
     // Dashboard picks it up via Supabase Realtime UPDATE event
-    explainAlert(enrichedAlert).catch(err => {
+    explainAlert(data[0]).catch(err => {
         console.error('[llm] Unhandled error:', err.message);
     });
 
