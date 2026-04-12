@@ -327,15 +327,21 @@ const Landing = () => {
 
       {/* ── HERO ── */}
       <section style={{ minHeight: '90vh', padding: '100px 40px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Background image or Entropy canvas — z-0 */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: '#0f0f0f' }}>
             <ShaderAnimation />
         </div>
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
+
+        {/* Dark overlay to fix text readability — z-[1] */}
+        <div className="absolute inset-0 z-[1] bg-black/60" />
+
+        {/* Hero content — z-[2] */}
+        <div className="relative z-[2]" style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #333', background: '#1a1a1a', borderRadius: 999, padding: '6px 16px', marginBottom: 32 }}>
             <span style={{ fontSize: 13, color: 'white' }}>🛡 Real-time threat detection for SMBs</span>
           </div>
 
-          <h1 className="font-display" style={{ fontSize: 72, color: 'white', lineHeight: 1.1, fontWeight: 700, marginBottom: 24 }}>
+          <h1 className="font-display text-white drop-shadow-lg" style={{ fontSize: 72, lineHeight: 1.1, fontWeight: 700, marginBottom: 24 }}>
             Your Business Is Being<br />Watched. Are You?
           </h1>
 
