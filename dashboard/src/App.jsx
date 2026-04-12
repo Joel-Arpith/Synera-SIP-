@@ -93,7 +93,7 @@ function App() {
           <ProtectedRoute>
             <DashboardLayout title="Firewall Quarantine">
               <BlockedIPs />
-            </ProtectedRoute>
+            </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/settings" element={
