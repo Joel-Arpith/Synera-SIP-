@@ -36,9 +36,14 @@ const ProtectedRoute = ({ children }) => {
   }, []);
   
   if (loading) return (
-     <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center gap-6">
-        <div className="h-10 w-10 border-4 border-[#6366f120] border-t-[#6366f1] rounded-full animate-spin" />
-        <p className="text-xs font-mono text-[#475569] uppercase tracking-[0.4em]">Establishing Secure Context</p>
+     <div className="min-h-screen bg-[#fbfbfd] flex flex-col items-center justify-center gap-8">
+        <div className="relative">
+          <div className="h-12 w-12 border-[3px] border-black/5 border-t-black rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-1.5 w-1.5 bg-black rounded-full animate-pulse" />
+          </div>
+        </div>
+        <p className="text-[13px] font-semibold text-black/40 uppercase tracking-[0.2em] ml-1">Secure Intel Access</p>
      </div>
   );
   
@@ -47,11 +52,11 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const DashboardLayout = ({ children, title }) => (
-  <div className="flex min-h-screen bg-[#0a0a0f]">
+  <div className="flex min-h-screen bg-[#fbfbfd]">
     <Sidebar />
-    <div className="flex-1 transition-all duration-300 ml-[240px]"> {/* ml updated dynamically if I had more robust state, but 240 is default */}
+    <div className="flex-1 transition-all duration-300 ml-64">
       <TopBar title={title} />
-      <main className="p-8">
+      <main className="p-10 max-w-[1600px] mx-auto">
         {children}
       </main>
     </div>
@@ -77,28 +82,28 @@ function App() {
         } />
         <Route path="/alerts" element={
           <ProtectedRoute>
-            <DashboardLayout title="Incursion Archive">
+            <DashboardLayout title="Security Archive">
               <AlertLog />
             </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/map" element={
           <ProtectedRoute>
-            <DashboardLayout title="Geo-Spatial Intel">
+            <DashboardLayout title="Geo-Spatial Intelligence">
               <ThreatMap />
             </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/blocked" element={
           <ProtectedRoute>
-            <DashboardLayout title="Firewall Quarantine">
+            <DashboardLayout title="Threat Quarantine">
               <BlockedIPs />
             </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/settings" element={
           <ProtectedRoute>
-            <DashboardLayout title="System Sovereignty">
+            <DashboardLayout title="System Configuration">
               <Settings />
             </DashboardLayout>
           </ProtectedRoute>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const StatCard = ({ value, label, icon: Icon, trend, color = "#6366f1" }) => {
+const StatCard = ({ value, label, icon: Icon, trend, color = "#000000" }) => {
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
@@ -12,7 +12,7 @@ const StatCard = ({ value, label, icon: Icon, trend, color = "#6366f1" }) => {
     }
     if (start === end) return;
 
-    let totalDuration = 800;
+    let totalDuration = 1000;
     let increment = end / (totalDuration / 16);
     let timer = setInterval(() => {
       start += increment;
@@ -28,23 +28,22 @@ const StatCard = ({ value, label, icon: Icon, trend, color = "#6366f1" }) => {
   }, [value]);
 
   return (
-    <div className="glass-card p-6 flex items-center justify-between group transition-all duration-150">
+    <div className="apple-card p-6 flex items-center justify-between transition-all duration-300">
       <div className="space-y-1">
-        <p className="text-[11px] font-bold text-[#94a3b8] uppercase tracking-widest">{label}</p>
+        <p className="text-[12px] font-bold text-[#86868b] uppercase tracking-wide">{label}</p>
         <div className="flex items-baseline gap-2">
-          <h3 className="text-[32px] font-bold font-mono text-[#f8fafc]">{displayValue}</h3>
+          <h3 className="text-[28px] font-bold text-black tracking-tight">{displayValue.toLocaleString()}</h3>
           {trend && (
-            <span className={`text-[11px] font-bold ${trend.startsWith('+') ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${trend.startsWith('+') ? 'bg-[#34c759]/10 text-[#34c759]' : 'bg-[#ff3b30]/10 text-[#ff3b30]'}`}>
               {trend}
             </span>
           )}
         </div>
       </div>
       <div 
-        className="p-4 rounded-[10px] transition-transform group-hover:scale-110"
-        style={{ backgroundColor: `${color}15`, color: color }}
+        className="p-3.5 rounded-2xl bg-[#f5f5f7] border border-[#d2d2d7]/20 flex items-center justify-center text-black"
       >
-        <Icon size={24} />
+        <Icon size={20} strokeWidth={2.5} />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabase';
 import { useNavigate, Link } from 'react-router-dom';
-import { Shield, Lock, Mail, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -24,36 +24,36 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-8 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366f1 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#6366f1] opacity-[0.05] blur-[120px] rounded-full pointer-events-none" />
+    <div className="min-h-screen bg-[#fbfbfd] flex items-center justify-center p-8 relative overflow-hidden font-sans">
+      {/* Design Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#007aff]/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-black/5 blur-[100px] rounded-full pointer-events-none" />
 
-      <div className="w-full max-w-[420px] relative z-10 animate-slide-up">
-        {/* Logo Section */}
+      <div className="w-full max-w-[400px] relative z-10 animate-fade">
+        {/* Apple-style Identity */}
         <div className="flex flex-col items-center gap-6 mb-12">
-           <div className="h-16 w-16 bg-[#111118] border border-[#2a2a3a] flex items-center justify-center rounded-[20px] shadow-glow">
-              <Shield className="text-[#6366f1]" size={32} />
+           <div className="h-20 w-20 bg-white border border-[#d2d2d7]/30 flex items-center justify-center rounded-[22px] shadow-xl">
+              <Shield className="text-black" size={36} strokeWidth={2.5} />
            </div>
            <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-[#f8fafc]">Synera</h1>
-              <p className="text-[#94a3b8] text-sm">Initialize secure session to access dashboard</p>
+              <h1 className="text-[32px] font-bold tracking-tight text-black">Sign In</h1>
+              <p className="text-[#86868b] text-[15px] font-medium">Access your Synera edge telemetry.</p>
            </div>
         </div>
 
-        {/* Card Form */}
-        <div className="glass-card p-10 space-y-8">
+        {/* Authentication Form */}
+        <div className="bg-white border border-[#d2d2d7]/50 rounded-[28px] p-10 shadow-2xl space-y-8">
            <form onSubmit={handleLogin} className="space-y-6">
-              <div className="space-y-4">
+              <div className="space-y-5">
                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-[#475569] uppercase tracking-widest pl-1">Administrator Email</label>
+                    <label className="text-[12px] font-bold text-black/50 uppercase tracking-wide pl-1">Email</label>
                     <div className="relative group">
-                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#475569] group-focus-within:text-[#6366f1] transition-colors" size={18} />
+                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#afafb6] group-focus-within:text-black transition-colors" size={18} />
                        <input 
                          type="email" 
                          required
-                         className="w-full bg-[#0a0a0f] border border-[#2a2a3a] focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1] text-[#f8fafc] h-12 pl-12 pr-4 rounded-[10px] outline-none transition-all"
-                         placeholder="admin@synera-ids.com"
+                         className="w-full bg-[#f5f5f7] border border-transparent focus:bg-white focus:border-black/20 text-black h-13 pl-12 pr-4 rounded-2xl outline-none transition-all font-medium"
+                         placeholder="admin@synera.in"
                          value={email}
                          onChange={(e) => setEmail(e.target.value)}
                        />
@@ -61,13 +61,13 @@ const Login = () => {
                  </div>
 
                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-[#475569] uppercase tracking-widest pl-1">Secure Keyphrase</label>
+                    <label className="text-[12px] font-bold text-black/50 uppercase tracking-wide pl-1">Passcode</label>
                     <div className="relative group">
-                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#475569] group-focus-within:text-[#6366f1] transition-colors" size={18} />
+                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#afafb6] group-focus-within:text-black transition-colors" size={18} />
                        <input 
                          type="password" 
                          required
-                         className="w-full bg-[#0a0a0f] border border-[#2a2a3a] focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1] text-[#f8fafc] h-12 pl-12 pr-4 rounded-[10px] outline-none transition-all"
+                         className="w-full bg-[#f5f5f7] border border-transparent focus:bg-white focus:border-black/20 text-black h-13 pl-12 pr-4 rounded-2xl outline-none transition-all font-medium"
                          placeholder="••••••••••••"
                          value={password}
                          onChange={(e) => setPassword(e.target.value)}
@@ -77,31 +77,36 @@ const Login = () => {
               </div>
 
               {error && (
-                <div className="flex items-center gap-3 p-4 bg-[#ef444410] border border-[#ef444430] rounded-[10px] text-[#ef4444] text-xs animate-fade">
-                   <AlertCircle size={14} className="shrink-0" />
+                <div className="flex items-center gap-3 p-4 bg-[#ff3b30]/5 border border-[#ff3b30]/10 rounded-2xl text-[#ff3b30] text-[13px] font-medium animate-fade">
+                   <AlertCircle size={15} className="shrink-0" />
                    {error}
                 </div>
               )}
 
-              <div className="space-y-4 pt-2">
+              <div className="space-y-6 pt-4">
                  <button 
                    disabled={loading}
-                   className="w-full h-14 bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-[#6366f120]"
+                   className="w-full h-14 bg-black hover:bg-[#1d1d1f] text-white font-bold text-[16px] rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg"
                  >
                     {loading ? (
                        <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : 'Sign In'}
+                    ) : (
+                      <>
+                        Initialize Session
+                        <ArrowRight size={18} />
+                      </>
+                    )}
                  </button>
                  
                  <div className="text-center">
-                    <button type="button" className="text-xs text-[#475569] hover:text-[#6366f1] transition-colors">Forgot password?</button>
+                    <button type="button" className="text-[14px] text-[#007aff] font-semibold hover:underline">Trouble logging in?</button>
                  </div>
               </div>
            </form>
         </div>
 
-        <div className="mt-12 text-center text-[10px] text-[#475569] tracking-[0.2em] font-bold uppercase">
-           End-to-End Cryptographic Protection Active
+        <div className="mt-12 text-center text-[12px] text-[#afafb6] font-semibold uppercase tracking-widest">
+           Secure Edge Partition: SYNERA-SIP-V2
         </div>
       </div>
     </div>
