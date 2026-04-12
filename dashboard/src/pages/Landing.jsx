@@ -207,9 +207,9 @@ const Landing = () => {
   const sevColor = { CRITICAL: '#ef4444', HIGH: '#f97316', MEDIUM: '#f59e0b', LOW: '#94a3b8' };
 
   return (
-    <div className="relative min-h-screen" style={{ fontFamily: "'Inter', sans-serif", color: '#0a0a0a' }}>
+    <div className="relative min-h-screen" style={{ fontFamily: "'Inter', sans-serif", color: '#ffffff', backgroundColor: '#0a0f1e' }}>
       {/* Entropy background */}
-      <div className="fixed inset-0 z-0 pointer-events-none" style={{ opacity: 0.55 }}>
+      <div className="fixed inset-0 z-[-1] pointer-events-none" style={{ opacity: 0.55 }}>
         <Entropy size={Math.max(window.innerWidth, window.innerHeight)} className="w-full h-full" />
       </div>
 
@@ -218,7 +218,7 @@ const Landing = () => {
         <LandingNav />
 
         {/* ── HERO ── */}
-        <section style={{ background: '#0f0f0f', minHeight: '90vh', padding: '100px 40px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <section style={{ background: 'transparent', minHeight: '90vh', padding: '100px 40px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ParticleHero />
           <div style={{ position: 'relative', zIndex: 1, maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #333', background: '#1a1a1a', borderRadius: 999, padding: '6px 16px', marginBottom: 32 }}>
@@ -301,7 +301,7 @@ const Landing = () => {
         </section>
 
         {/* ── FEATURES ── */}
-        <section id="features" style={{ background: 'white', padding: '120px 40px' }}>
+        <section id="features" style={{ background: 'transparent', padding: '120px 40px' }}>
           <div ref={featRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 64 }}>
               <p style={{ color: '#6b7280', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16, fontWeight: 600 }}>FEATURES</p>
@@ -372,7 +372,7 @@ const Landing = () => {
         </section>
 
         {/* ── HOW IT WORKS ── */}
-        <section id="how-it-works" style={{ background: '#0f0f0f', padding: '120px 40px' }}>
+        <section id="how-it-works" style={{ background: 'transparent', padding: '120px 40px' }}>
           <div ref={howRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
             <h2 className="font-display" style={{ fontSize: 56, color: 'white', fontWeight: 700, marginBottom: 16 }}>Protect your network in 3 easy steps</h2>
             <p style={{ color: '#9ca3af', fontSize: 18, marginBottom: 80 }}>From setup to protection in under an hour</p>
