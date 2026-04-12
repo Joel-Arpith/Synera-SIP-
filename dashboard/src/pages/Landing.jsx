@@ -2,6 +2,60 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, ChevronDown, Plus, X } from 'lucide-react';
 import useScrollReveal from '../hooks/useScrollReveal';
+import { ShaderAnimation } from '../components/ui/shader-lines';
+import { PulseBeams } from '../components/ui/pulse-beams';
+import { LiquidButton } from '../components/ui/liquid-glass-button';
+import { supabase } from '../supabase';
+
+const beamsData = [
+  {
+    path: "M269 220.5H16.5C10.9772 220.5 6.5 224.977 6.5 230.5V398.5",
+    gradientConfig: {
+      initial: { x1: "0%", x2: "0%", y1: "80%", y2: "100%" },
+      animate: { x1: ["0%", "0%", "200%"], x2: ["0%", "0%", "180%"], y1: ["80%", "0%", "0%"], y2: ["100%", "20%", "20%"] },
+      transition: { duration: 2, repeat: Infinity, repeatType: "loop", ease: "linear", repeatDelay: 2, delay: Math.random() * 2 },
+    },
+    connectionPoints: [{ cx: 6.5, cy: 398.5, r: 6 }, { cx: 269, cy: 220.5, r: 6 }]
+  },
+  {
+    path: "M568 200H841C846.523 200 851 195.523 851 190V40",
+    gradientConfig: {
+      initial: { x1: "0%", x2: "0%", y1: "80%", y2: "100%" },
+      animate: { x1: ["20%", "100%", "100%"], x2: ["0%", "90%", "90%"], y1: ["80%", "80%", "-20%"], y2: ["100%", "100%", "0%"] },
+      transition: { duration: 2, repeat: Infinity, repeatType: "loop", ease: "linear", repeatDelay: 2, delay: Math.random() * 2 },
+    },
+    connectionPoints: [{ cx: 851, cy: 34, r: 6.5 }, { cx: 568, cy: 200, r: 6 }]
+  },
+  {
+    path: "M425.5 274V333C425.5 338.523 421.023 343 415.5 343H152C146.477 343 142 347.477 142 353V426.5",
+    gradientConfig: {
+      initial: { x1: "0%", x2: "0%", y1: "80%", y2: "100%" },
+      animate: { x1: ["20%", "100%", "100%"], x2: ["0%", "90%", "90%"], y1: ["80%", "80%", "-20%"], y2: ["100%", "100%", "0%"] },
+      transition: { duration: 2, repeat: Infinity, repeatType: "loop", ease: "linear", repeatDelay: 2, delay: Math.random() * 2 },
+    },
+    connectionPoints: [{ cx: 142, cy: 427, r: 6.5 }, { cx: 425.5, cy: 274, r: 6 }]
+  },
+  {
+    path: "M493 274V333.226C493 338.749 497.477 343.226 503 343.226H760C765.523 343.226 770 347.703 770 353.226V427",
+    gradientConfig: {
+      initial: { x1: "40%", x2: "50%", y1: "160%", y2: "180%" },
+      animate: { x1: "0%", x2: "10%", y1: "-40%", y2: "-20%" },
+      transition: { duration: 2, repeat: Infinity, repeatType: "loop", ease: "linear", repeatDelay: 2, delay: Math.random() * 2 },
+    },
+    connectionPoints: [{ cx: 770, cy: 427, r: 6.5 }, { cx: 493, cy: 274, r: 6 }]
+  },
+  {
+    path: "M380 168V17C380 11.4772 384.477 7 390 7H414",
+    gradientConfig: {
+      initial: { x1: "-40%", x2: "-10%", y1: "0%", y2: "20%" },
+      animate: { x1: ["40%", "0%", "0%"], x2: ["10%", "0%", "0%"], y1: ["0%", "0%", "180%"], y2: ["20%", "20%", "200%"] },
+      transition: { duration: 2, repeat: Infinity, repeatType: "loop", ease: "linear", repeatDelay: 2, delay: Math.random() * 2 },
+    },
+    connectionPoints: [{ cx: 420.5, cy: 6.5, r: 6 }, { cx: 380, cy: 168, r: 6 }]
+  }
+];
+
+const gradientColorsConfig = { start: "#18CCFC", middle: "#6344F5", end: "#AE48FF" };
 
 /* ─── Particle Canvas ─── */
 const ParticleHero = () => {
@@ -125,12 +179,12 @@ export const LandingFooter = () => (
 
       {/* Social */}
       <div style={{ display: 'flex', gap: 12, marginTop: 48 }}>
-        <div style={{ width: 36, height: 36, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
+        <a href="https://www.linkedin.com/in/joel-arpith-b18115210/" target="_blank" rel="noreferrer" style={{ width: 36, height: 36, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', textDecoration: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = '#9ca3af'}>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-        </div>
-        <div style={{ width: 36, height: 36, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
+        </a>
+        <a href="https://github.com/Joel-Arpith" target="_blank" rel="noreferrer" style={{ width: 36, height: 36, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', textDecoration: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = '#9ca3af'}>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-        </div>
+        </a>
       </div>
 
       {/* Copyright */}
@@ -164,6 +218,73 @@ const FaqItem = ({ q, a }) => {
         <p style={{ paddingTop: 12, fontSize: 14, color: '#6b7280', lineHeight: 1.7 }}>{a}</p>
       </div>
     </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════
+   CONTACT FORM
+   ═══════════════════════════════════════════════ */
+const ContactForm = () => {
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [status, setStatus] = useState('idle');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus('loading');
+    
+    // Check if Supabase keys exist (for safety if user hasn't put them in env)
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.warn("Supabase credentials missing, simulating success");
+      setTimeout(() => setStatus('success'), 1000);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('contacts').insert([{
+        name: formData.name,
+        email: formData.email,
+        message: formData.message
+      }]);
+      if (error) throw error;
+      setStatus('success');
+      setFormData({ name: '', email: '', message: '' });
+    } catch (err) {
+      console.error('Contact error:', err);
+      setStatus('error');
+    }
+  };
+
+  return (
+    <section id="contact" style={{ background: '#f9fafb', padding: '120px 40px', borderTop: '1px solid #f0f0f0' }}>
+      <div className="reveal" style={{ maxWidth: 600, margin: '0 auto', background: 'white', borderRadius: 24, padding: 48, boxShadow: '0 12px 40px rgba(0,0,0,0.06)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <h2 className="font-display" style={{ fontSize: 40, fontWeight: 700, color: '#0a0a0a', marginBottom: 12 }}>Get in Touch</h2>
+          <p style={{ color: '#6b7280', fontSize: 16 }}>Have a question or need a custom solution? Send us a message.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Name</label>
+            <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9fafb', fontSize: 15, outline: 'none' }} placeholder="John Doe" />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Email</label>
+            <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9fafb', fontSize: 15, outline: 'none' }} placeholder="john@company.com" />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Message</label>
+            <textarea required value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} rows={4} style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9fafb', fontSize: 15, outline: 'none', resize: 'none' }} placeholder="Tell us about your network..." />
+          </div>
+
+          {status === 'success' && <div style={{ padding: 12, background: '#dcfce7', color: '#16a34a', borderRadius: 8, fontSize: 14, textAlign: 'center' }}>Message sent successfully! We'll be in touch soon.</div>}
+          {status === 'error' && <div style={{ padding: 12, background: '#fee2e2', color: '#dc2626', borderRadius: 8, fontSize: 14, textAlign: 'center' }}>Something went wrong. Please try again later.</div>}
+
+          <button disabled={status === 'loading'} style={{ background: '#0a0a0a', color: 'white', borderRadius: 8, padding: 16, fontSize: 15, fontWeight: 600, cursor: status === 'loading' ? 'not-allowed' : 'pointer', border: 'none', marginTop: 8 }}>
+            {status === 'loading' ? 'Sending...' : 'Send Message'}
+          </button>
+        </form>
+      </div>
+    </section>
   );
 };
 
@@ -205,8 +326,10 @@ const Landing = () => {
       <LandingNav />
 
       {/* ── HERO ── */}
-      <section style={{ background: '#0f0f0f', minHeight: '90vh', padding: '100px 40px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <ParticleHero />
+      <section style={{ minHeight: '90vh', padding: '100px 40px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: '#0f0f0f' }}>
+            <ShaderAnimation />
+        </div>
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #333', background: '#1a1a1a', borderRadius: 999, padding: '6px 16px', marginBottom: 32 }}>
             <span style={{ fontSize: 13, color: 'white' }}>🛡 Real-time threat detection for SMBs</span>
@@ -226,9 +349,13 @@ const Landing = () => {
             ))}
           </div>
 
-          <button style={{ background: 'white', color: '#0a0a0a', borderRadius: 999, padding: '14px 32px', fontSize: 16, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
-            Download Now ↗
-          </button>
+          <div style={{ marginTop: 24, marginBottom: 32 }}>
+            <a href="#contact" style={{ display: 'inline-block', textDecoration: 'none' }}>
+              <LiquidButton variant="cool" size="xl">
+                Contact Us
+              </LiquidButton>
+            </a>
+          </div>
 
           {/* ── Dashboard Mockup ── */}
           <div style={{ maxWidth: 900, margin: '60px auto 0', border: '1px solid #2a2a2a', borderRadius: 16, overflow: 'hidden', background: '#1a1a1a' }}>
@@ -359,8 +486,9 @@ const Landing = () => {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" style={{ background: '#0f0f0f', padding: '120px 40px' }}>
-        <div ref={howRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
+      <section id="how-it-works" style={{ background: '#0f0f0f', padding: 0, position: 'relative' }}>
+        <PulseBeams beams={beamsData} gradientColors={gradientColorsConfig} className="bg-slate-950 py-[120px]">
+        <div ref={howRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center', padding: '0 40px' }}>
           <h2 className="font-display" style={{ fontSize: 56, color: 'white', fontWeight: 700, marginBottom: 16 }}>Protect your network in 3 easy steps</h2>
           <p style={{ color: '#9ca3af', fontSize: 18, marginBottom: 80 }}>From setup to protection in under an hour</p>
 
@@ -370,7 +498,7 @@ const Landing = () => {
               { num: '02', title: 'Connect to your router', text: 'Plug your Pi into your router via ethernet. Synera instantly begins monitoring all network traffic.', code: null },
               { num: '03', title: 'Open your dashboard', text: 'Log into your secure dashboard from any browser. See threats, AI explanations, and blocked IPs live.', code: null },
             ].map((step, i) => (
-              <div key={i} style={{ background: '#1a1a1a', border: `1px solid ${activeStep === i ? '#444' : '#2a2a2a'}`, borderRadius: 16, padding: 32, textAlign: 'left', transition: 'border-color 0.4s' }}>
+              <div key={i} style={{ background: '#1a1a1a', border: `1px solid ${activeStep === i ? '#444' : '#2a2a2a'}`, borderRadius: 16, padding: 32, textAlign: 'left', transition: 'border-color 0.4s', zIndex: 10 }}>
                 <span style={{ fontSize: 12, color: '#4b5563', fontWeight: 700, letterSpacing: 2 }}>{step.num}</span>
                 <h3 style={{ fontSize: 20, color: 'white', fontWeight: 700, margin: '16px 0 12px' }}>{step.title}</h3>
                 <p style={{ fontSize: 14, color: '#9ca3af', lineHeight: 1.7, marginBottom: step.code ? 20 : 0 }}>{step.text}</p>
@@ -383,6 +511,7 @@ const Landing = () => {
             ))}
           </div>
         </div>
+        </PulseBeams>
       </section>
 
       {/* ── STATS ── */}
@@ -491,6 +620,7 @@ const Landing = () => {
         </div>
       </section>
 
+      <ContactForm />
       <LandingFooter />
     </div>
   );

@@ -62,10 +62,10 @@ const About = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: 24 }} className="reveal-children">
             {[
-              { name: 'Joel Arpith', role: 'LEAD DEVELOPER & ARCHITECT', desc: 'Built the core IDS pipeline, backend systems, and overall project architecture.', color: '#0f0f0f', initials: 'JA' },
-              { name: 'Aditya Ummadi', role: 'SECURITY RESEARCH & RULES ENGINE', desc: 'Designed custom Suricata detection rules and led threat intelligence research.', color: '#1e3a5f', initials: 'AU' },
-              { name: 'Abhiram Suraparaju', role: 'FRONTEND & DASHBOARD', desc: 'Crafted the SOC dashboard interface and real-time data visualizations.', color: '#14532d', initials: 'AS' },
-              { name: 'Hansitha Purshotham', role: 'AI INTEGRATION & QA', desc: 'Integrated Claude AI explanation engine and led end-to-end testing.', color: '#3b0764', initials: 'HP' },
+              { name: 'Joel Arpith', role: 'LEAD DEVELOPER & ARCHITECT', desc: 'Built the core IDS pipeline, backend systems, and overall project architecture.', color: '#0f0f0f', initials: 'JA', ln: 'https://www.linkedin.com/in/joel-arpith-b18115210/', gh: 'https://github.com/Joel-Arpith' },
+              { name: 'Aditya Ummadi', role: 'SECURITY RESEARCH & RULES ENGINE', desc: 'Designed custom Suricata detection rules and led threat intelligence research.', color: '#1e3a5f', initials: 'AU', ln: '#', gh: '#' },
+              { name: 'Abhiram Suraparaju', role: 'FRONTEND & DASHBOARD', desc: 'Crafted the SOC dashboard interface and real-time data visualizations.', color: '#14532d', initials: 'AS', ln: '#', gh: '#' },
+              { name: 'Hansitha Purshotham', role: 'AI INTEGRATION & QA', desc: 'Integrated Claude AI explanation engine and led end-to-end testing.', color: '#3b0764', initials: 'HP', ln: '#', gh: '#' },
             ].map((m, i) => (
               <div key={i} className="reveal" style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 20, padding: 40 }}>
                 <div style={{ width: 80, height: 80, borderRadius: 20, background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700 }}>
@@ -73,7 +73,20 @@ const About = () => {
                 </div>
                 <h3 style={{ fontSize: 20, fontWeight: 700, color: '#0a0a0a', marginTop: 20 }}>{m.name}</h3>
                 <p style={{ fontSize: 13, color: '#6b7280', letterSpacing: 1, textTransform: 'uppercase', margin: '4px 0 12px', fontWeight: 500 }}>{m.role}</p>
-                <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>{m.desc}</p>
+                <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, marginBottom: 20 }}>{m.desc}</p>
+                
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {m.ln !== '#' && (
+                    <a href={m.ln} target="_blank" rel="noreferrer" style={{ color: '#9ca3af', textDecoration: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#0a0a0a'} onMouseLeave={e => e.currentTarget.style.color = '#9ca3af'}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                    </a>
+                  )}
+                  {m.gh !== '#' && (
+                    <a href={m.gh} target="_blank" rel="noreferrer" style={{ color: '#9ca3af', textDecoration: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#0a0a0a'} onMouseLeave={e => e.currentTarget.style.color = '#9ca3af'}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
           </div>
