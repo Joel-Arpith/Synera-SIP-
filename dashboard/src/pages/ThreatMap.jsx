@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ComposableMap, 
-  Geographies, 
-  Geography, 
-  Marker 
-} from 'react-simple-maps';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import { supabase } from '../supabase';
 import { Globe, MapPin, AlertTriangle } from 'lucide-react';
 
-const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+// Fix for Leaflet default icons in some build environments
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 const ThreatMap = () => {
   const [markers, setMarkers] = useState([]);
@@ -22,15 +29,16 @@ const ThreatMap = () => {
       .on('postgres_changes', { event: 'INSERT', table: 'alerts' }, (payload) => {
         const newMarker = {
           id: payload.new.id,
-          coordinates: [payload.new.lng, payload.new.lat],
+          // Leaflet uses [lat, lng]
+          position: [payload.new.lat, payload.new.lng],
           name: payload.new.src_ip,
           severity: payload.new.severity,
           country: payload.new.country,
           attackType: payload.new.attack_type
         };
         
-        if (newMarker.coordinates[0] !== 0) {
-            setMarkers(prev => [newMarker, ...prev].slice(0, 50));
+        if (newMarker.position[0] !== 0 && newMarker.position[1] !== 0) {
+            setMarkers(prev => [newMarker, ...prev].slice(0, 100));
             updateCountryStats(newMarker.country);
         }
       })
@@ -44,13 +52,14 @@ const ThreatMap = () => {
       .from('alerts')
       .select('id, lat, lng, src_ip, severity, country, attack_type')
       .neq('lat', 0)
+      .neq('lng', 0)
       .order('timestamp', { ascending: false })
-      .limit(100);
+      .limit(200);
     
     if (data) {
         const formatted = data.map(a => ({
             id: a.id,
-            coordinates: [a.lng, a.lat],
+            position: [a.lat, a.lng],
             name: a.src_ip,
             severity: a.severity,
             country: a.country,
@@ -113,40 +122,44 @@ const ThreatMap = () => {
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[500px]">
         {/* Map Container */}
-        <div className="lg:col-span-3 glass-card relative overflow-hidden flex items-center justify-center p-4">
-          <ComposableMap
-            projectionConfig={{ scale: 160 }}
-            style={{ width: "100%", height: "auto" }}
+        <div className="lg:col-span-3 glass-card relative overflow-hidden p-0">
+          <MapContainer 
+            center={[20, 0]} 
+            zoom={2} 
+            scrollWheelZoom={true}
+            style={{ height: '100%', width: '100%', background: '#0a0f1e' }}
+            className="z-0"
           >
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="#1f2937"
-                    stroke="#111827"
-                    strokeWidth={0.5}
-                    style={{
-                      default: { outline: "none" },
-                      hover: { fill: "#374151", outline: "none" },
-                    }}
-                  />
-                ))
-              }
-            </Geographies>
-            {markers.map(({ id, coordinates, severity, name }) => (
-              <Marker key={id} coordinates={coordinates}>
-                <circle r={2} fill={getColor(severity)} />
-                <circle 
-                    r={6} 
-                    fill={getColor(severity)} 
-                    className="pulse-ring" 
-                    style={{ fillOpacity: 0.4 }} 
-                />
-              </Marker>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            />
+            {markers.map((marker) => (
+              <CircleMarker 
+                key={marker.id} 
+                center={marker.position} 
+                radius={6}
+                fillColor={getColor(marker.severity)}
+                color={getColor(marker.severity)}
+                weight={1}
+                opacity={0.8}
+                fillOpacity={0.4}
+              >
+                <Popup>
+                  <div className="bg-[#111827] text-white p-2 rounded border border-border">
+                    <p className="font-bold text-cyan-primary mb-1">{marker.name}</p>
+                    <p className="text-xs text-gray-400">{marker.country} • {marker.attackType}</p>
+                    <p className={`text-[10px] font-bold uppercase mt-2 text-center py-0.5 rounded ${
+                        marker.severity === 'critical' ? 'bg-danger/20 text-danger' : 
+                        marker.severity === 'high' ? 'bg-warning/20 text-warning' : 'bg-cyan-primary/20 text-cyan-primary'
+                    }`}>
+                        {marker.severity}
+                    </p>
+                  </div>
+                </Popup>
+              </CircleMarker>
             ))}
-          </ComposableMap>
+          </MapContainer>
         </div>
 
         {/* Sidebar Stats */}
