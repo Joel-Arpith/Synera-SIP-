@@ -1,366 +1,496 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Shield, 
-  Zap, 
-  Ban, 
-  Globe, 
-  Database, 
-  Cpu, 
-  TrendingUp, 
-  CheckCircle,
-  Brain,
-  Wifi,
-  Search,
-  ChevronDown
-} from 'lucide-react';
-import Badge from '../components/Badge';
+import { Shield, ChevronDown, Plus, X, Linkedin, Github } from 'lucide-react';
+import useScrollReveal from '../hooks/useScrollReveal';
 
-const Landing = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const [mockAlerts, setMockAlerts] = useState([
-     { sig: 'ET SCAN Nmap probe', sev: 'high', time: '10:45:02' }
-  ]);
-  const [activeStep, setActiveStep] = useState(0);
+/* ─── Particle Canvas ─── */
+const ParticleHero = () => {
+  const canvasRef = useRef(null);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    
-    // Hero Animation Logic
-    const alertInterval = setInterval(() => {
-       const signatures = [
-         'ET SCAN libssh brute force',
-         'ET WEB_SPECIFIC_APPS Drupal exploit',
-         'ET POLICY IP Check response',
-         'ET EXPLOIT DNS Amplification'
-       ];
-       const newAlert = {
-         sig: signatures[Math.floor(Math.random() * signatures.length)],
-         sev: Math.random() > 0.5 ? 'high' : 'critical',
-         time: new Date().toLocaleTimeString([], { hour12: false })
-       };
-       setMockAlerts(prev => [newAlert, ...prev].slice(0, 3));
-    }, 4000);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    let particles = [];
 
-    // Flow Animation Logic
-    const stepInterval = setInterval(() => {
-      setActiveStep(prev => (prev + 1) % 4);
-    }, 2000);
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    for (let i = 0; i < 200; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.2 + 0.4,
+        speed: Math.random() * 0.3 + 0.1,
+        opacity: Math.random() * 0.3 + 0.05,
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${p.opacity})`;
+        ctx.fill();
+        p.y -= p.speed;
+        if (p.y < -5) {
+          p.y = canvas.height + 5;
+          p.x = Math.random() * canvas.width;
+        }
+      });
+      animationId = requestAnimationFrame(draw);
+    };
+    draw();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearInterval(alertInterval);
-      clearInterval(stepInterval);
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', resize);
     };
   }, []);
 
+  return <canvas ref={canvasRef} className="particle-canvas" />;
+};
+
+/* ─── Reusable Navbar ─── */
+export const LandingNav = () => {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const h = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', h);
+    return () => window.removeEventListener('scroll', h);
+  }, []);
+
   return (
-    <div className="bg-[#0a0a0f] min-h-screen text-[#f8fafc]">
-      {/* Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${scrolled ? 'bg-[#0a0a0f]/80 backdrop-blur-md border-b border-[#2a2a3a] py-4' : 'bg-transparent py-6'}`}>
-        <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <Shield className="text-[#6366f1]" size={28} />
-             <span className="text-xl font-bold tracking-tight">Synera</span>
-          </div>
-          
-          <div className="hidden md:flex items-center gap-10 text-sm font-medium text-[#94a3b8]">
-             <a href="#features" className="hover:text-white transition-colors">Features</a>
-             <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
-             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-             <Link to="/about" className="hover:text-white transition-colors">About</Link>
-          </div>
+    <nav style={{ position: 'sticky', top: 0, zIndex: 100, padding: '16px 20px', background: 'white', borderBottom: scrolled ? '1px solid #f0f0f0' : '1px solid transparent', transition: 'border-color 0.3s' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', border: '1px solid #e5e7eb', borderRadius: 999, padding: '10px 20px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Shield size={16} color="#0a0a0a" />
+          <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: 2, color: '#0a0a0a' }}>SYNERA</span>
+        </Link>
 
-          <div className="flex items-center gap-4">
-             <Link to="/login" className="text-sm font-medium text-[#94a3b8] hover:text-white px-4 py-2 transition-colors">Sign In</Link>
-             <button className="bg-[#6366f1] hover:bg-[#4f46e5] text-white text-sm font-semibold px-6 py-2.5 rounded-[10px] transition-all">
-                Download Now
-             </button>
-          </div>
+        <div style={{ display: 'flex', gap: 32 }} className="hidden md:flex">
+          <a href="#features" style={{ fontSize: 14, color: '#4b5563' }}>Features</a>
+          <a href="#how-it-works" style={{ fontSize: 14, color: '#4b5563' }}>How It Works</a>
+          <a href="#pricing" style={{ fontSize: 14, color: '#4b5563' }}>Pricing</a>
+          <Link to="/about" style={{ fontSize: 14, color: '#4b5563' }}>About</Link>
         </div>
-      </nav>
 
-      {/* Hero Section */}
-      <section className="pt-48 pb-32 px-8 overflow-hidden">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
-          <div className="space-y-8 relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#6366f115] border border-[#6366f130]">
-               <span className="text-[11px] font-bold text-[#6366f1] tracking-wider uppercase">🛡 Trusted by 500+ businesses</span>
-            </div>
-            
-            <h1 className="text-[56px] leading-[1.1] font-bold tracking-tight">
-               Your Business Is Being <br />
-               <span className="text-[#6366f1]">Watched.</span> Are You?
-            </h1>
-            
-            <p className="text-xl text-[#94a3b8] max-w-[560px] leading-relaxed">
-               Synera detects cyber threats in real-time before they become disasters. Built for small businesses who deserve enterprise-grade protection.
-            </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link to="/login" style={{ fontSize: 14, color: '#0a0a0a', fontWeight: 500 }}>Sign In</Link>
+          <button style={{ background: '#0a0a0a', color: 'white', borderRadius: 999, padding: '8px 18px', fontSize: 14, fontWeight: 600 }}>Download Now ↗</button>
+        </div>
+      </div>
+    </nav>
+  );
+};
 
-            <div className="flex flex-wrap gap-4 pt-4">
-               <button className="bg-[#6366f1] hover:bg-[#4f46e5] h-14 px-8 text-base font-bold shadow-[0_0_20px_rgba(99,102,241,0.2)]">
-                  Download Now
-               </button>
-               <button className="bg-transparent border border-[#2a2a3a] hover:bg-[#1a1a24] h-14 px-8 text-base font-bold">
-                  See Live Demo
-               </button>
-            </div>
+/* ─── Reusable Footer ─── */
+export const LandingFooter = () => (
+  <footer style={{ background: '#0f0f0f', padding: '80px 40px 0' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 80, justifyContent: 'space-between' }}>
+        {/* Brand */}
+        <div style={{ maxWidth: 260 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <Shield size={20} color="white" />
+            <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: 2, color: 'white' }}>SYNERA</span>
+          </div>
+          <p style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.7 }}>Protecting small businesses from cyber threats.</p>
+          <button style={{ marginTop: 24, border: '1px solid #333', borderRadius: 999, padding: '10px 20px', color: '#9ca3af', fontSize: 14, background: 'transparent' }}>✉ team@synera.in</button>
+        </div>
 
-            <div className="pt-20 flex flex-wrap gap-x-12 gap-y-6 opacity-30 grayscale pointer-events-none">
-               <span className="text-sm font-bold uppercase tracking-widest">Powered by Suricata</span>
-               <span className="text-sm font-bold uppercase tracking-widest">Supabase Secured</span>
-               <span className="text-sm font-bold uppercase tracking-widest">AI Analysis</span>
+        {/* Link columns */}
+        {[
+          { title: 'Product', links: [{ t: 'Features', h: '#features' }, { t: 'Pricing', h: '#pricing' }, { t: 'Dashboard', h: '/login' }, { t: 'Download', h: '#' }] },
+          { title: 'Company', links: [{ t: 'About Us', h: '/about' }, { t: 'Our Team', h: '/about#team' }, { t: 'GitHub', h: '#' }] },
+          { title: 'Support', links: [{ t: 'FAQs', h: '#faq' }, { t: 'Contact Us', h: '#' }, { t: 'Privacy Policy', h: '#' }] },
+        ].map((col) => (
+          <div key={col.title}>
+            <p style={{ color: '#9ca3af', fontSize: 12, letterSpacing: 2, fontWeight: 700, textTransform: 'uppercase', marginBottom: 20 }}>{col.title}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {col.links.map((l) => (
+                <Link key={l.t} to={l.h} style={{ color: '#9ca3af', fontSize: 14 }} onMouseEnter={(e) => (e.target.style.color = 'white')} onMouseLeave={(e) => (e.target.style.color = '#9ca3af')}>{l.t}</Link>
+              ))}
             </div>
           </div>
+        ))}
+      </div>
 
-          {/* Hero Visual Mockup */}
-          <div className="relative">
-             <div className="absolute -inset-10 bg-[#6366f1] opacity-[0.03] blur-[100px] rounded-full" />
-             <div className="glass-card shadow-2xl relative animate-slide-up bg-[#0d0d14] overflow-hidden">
-                <div className="h-10 bg-[#1a1a24] border-b border-[#2a2a3a] flex items-center px-4 gap-2">
-                   <div className="h-2 w-2 rounded-full bg-[#ef4444]" />
-                   <div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
-                   <div className="h-2 w-2 rounded-full bg-[#10b981]" />
-                   <span className="ml-4 text-[10px] font-mono text-[#475569]">ssh admin@synera-ids-pi-4</span>
-                </div>
-                
-                <div className="p-8 space-y-8 h-[440px]">
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-[#111118] border border-[#2a2a3a] p-4 rounded-xl">
-                         <p className="text-[10px] font-bold text-[#475569] uppercase mb-1">Total Alerts</p>
-                         <p className="text-2xl font-bold font-mono">0</p>
-                      </div>
-                      <div className="bg-[#111118] border border-[#2a2a3a] p-4 rounded-xl">
-                         <p className="text-[10px] font-bold text-[#475569] uppercase mb-1">Threats Blocked</p>
-                         <p className="text-2xl font-bold font-mono text-[#ef4444]">0</p>
-                      </div>
-                   </div>
+      {/* Social */}
+      <div style={{ display: 'flex', gap: 12, marginTop: 48 }}>
+        {[Linkedin, Github].map((Icon, i) => (
+          <div key={i} style={{ width: 36, height: 36, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
+            <Icon size={16} />
+          </div>
+        ))}
+      </div>
 
-                   <div className="space-y-3">
-                      <p className="text-[10px] font-bold text-[#6366f1] tracking-widest uppercase">Live Security Stream</p>
-                      <div className="space-y-2">
-                        {mockAlerts.map((a, i) => (
-                           <div key={i} className="flex items-center justify-between bg-white/5 p-3 rounded-lg border border-white/5 animate-fade">
-                              <div className="flex items-center gap-3">
-                                 <span className="text-[10px] font-mono text-[#475569]">{a.time}</span>
-                                 <span className="text-xs font-semibold truncate max-w-[140px]">{a.sig}</span>
-                              </div>
-                              <Badge type={a.sev}>{a.sev}</Badge>
-                           </div>
-                        ))}
-                      </div>
-                   </div>
+      {/* Copyright */}
+      <div style={{ borderTop: '1px solid #1e1e1e', marginTop: 40, padding: '20px 0' }}>
+        <p style={{ color: '#4b5563', fontSize: 13 }}>© 2026 Synera. All rights reserved.</p>
+      </div>
 
-                   <div className="h-24 bg-[#6366f110] border border-[#6366f120] rounded-xl flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-2">
-                         <div className="h-1.5 w-1.5 rounded-full bg-[#6366f1] animate-ping" />
-                         <p className="text-[11px] font-bold text-[#6366f1] tracking-widest uppercase">System Monitoring Active</p>
-                      </div>
-                   </div>
-                </div>
-             </div>
+      {/* Giant brand name */}
+      <div style={{ textAlign: 'center', overflow: 'hidden', lineHeight: 0.8, marginTop: 40, paddingBottom: 0 }}>
+        <span style={{ fontSize: 'clamp(80px, 15vw, 200px)', fontWeight: 900, color: '#1a1a1a', letterSpacing: -4, display: 'block' }}>SYNERA</span>
+      </div>
+    </div>
+  </footer>
+);
+
+/* ─── FAQ Item ─── */
+const FaqItem = ({ q, a }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div
+      onClick={() => setOpen(!open)}
+      style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 24px', cursor: 'pointer', transition: 'all 0.2s' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+        <span style={{ fontSize: 15, color: '#0a0a0a', fontWeight: 500 }}>{q}</span>
+        <div style={{ width: 28, height: 28, borderRadius: 999, background: '#0a0a0a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'transform 0.3s', transform: open ? 'rotate(45deg)' : 'none' }}>
+          <Plus size={14} />
+        </div>
+      </div>
+      <div style={{ maxHeight: open ? 200 : 0, overflow: 'hidden', transition: 'max-height 0.4s ease' }}>
+        <p style={{ paddingTop: 12, fontSize: 14, color: '#6b7280', lineHeight: 1.7 }}>{a}</p>
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════
+   LANDING PAGE
+   ═══════════════════════════════════════════════ */
+const Landing = () => {
+  const [mockAlerts, setMockAlerts] = useState([
+    { sig: 'ET SCAN Nmap probe detected', sev: 'HIGH', time: '10:45:02', ip: '45.33.32.156' },
+  ]);
+  const [activeStep, setActiveStep] = useState(0);
+
+  /* Refs for scroll reveals */
+  const featRef = useScrollReveal();
+  const statsRef = useScrollReveal();
+  const pricingRef = useScrollReveal();
+  const faqRef = useScrollReveal();
+  const howRef = useScrollReveal();
+
+  useEffect(() => {
+    const sigs = [
+      { sig: 'ET EXPLOIT OpenSSL Heartbleed', sev: 'CRITICAL', ip: '185.56.80.11' },
+      { sig: 'ET POLICY DNS Query to .onion', sev: 'MEDIUM', ip: '103.21.44.2' },
+      { sig: 'ET SCAN libssh brute force', sev: 'HIGH', ip: '92.118.160.5' },
+      { sig: 'ET DOS SYN flood detected', sev: 'CRITICAL', ip: '38.60.251.18' },
+    ];
+    const t = setInterval(() => {
+      const s = sigs[Math.floor(Math.random() * sigs.length)];
+      setMockAlerts((prev) => [{ ...s, time: new Date().toLocaleTimeString([], { hour12: false }) }, ...prev].slice(0, 4));
+    }, 3500);
+    const s2 = setInterval(() => setActiveStep((p) => (p + 1) % 3), 2500);
+    return () => { clearInterval(t); clearInterval(s2); };
+  }, []);
+
+  const sevColor = { CRITICAL: '#ef4444', HIGH: '#f97316', MEDIUM: '#f59e0b', LOW: '#94a3b8' };
+
+  return (
+    <div style={{ fontFamily: "'Inter', sans-serif", color: '#0a0a0a' }}>
+      <LandingNav />
+
+      {/* ── HERO ── */}
+      <section style={{ background: '#0f0f0f', minHeight: '90vh', padding: '100px 40px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <ParticleHero />
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid #333', background: '#1a1a1a', borderRadius: 999, padding: '6px 16px', marginBottom: 32 }}>
+            <span style={{ fontSize: 13, color: 'white' }}>🛡 Real-time threat detection for SMBs</span>
+          </div>
+
+          <h1 className="font-display" style={{ fontSize: 72, color: 'white', lineHeight: 1.1, fontWeight: 700, marginBottom: 24 }}>
+            Your Business Is Being<br />Watched. Are You?
+          </h1>
+
+          <p style={{ color: '#9ca3af', fontSize: 18, maxWidth: 520, margin: '0 auto 24px', lineHeight: 1.6 }}>
+            Synera detects cyber threats before they become disasters — built for businesses that can't afford to be breached.
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginBottom: 32, flexWrap: 'wrap' }}>
+            {['Detects threats in <3 seconds', 'AI explains every alert', 'Auto-blocks attackers'].map((t) => (
+              <span key={t} className="landing-check" style={{ color: '#9ca3af', fontSize: 14 }}>{t}</span>
+            ))}
+          </div>
+
+          <button style={{ background: 'white', color: '#0a0a0a', borderRadius: 999, padding: '14px 32px', fontSize: 16, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+            Download Now ↗
+          </button>
+
+          {/* ── Dashboard Mockup ── */}
+          <div style={{ maxWidth: 900, margin: '60px auto 0', border: '1px solid #2a2a2a', borderRadius: 16, overflow: 'hidden', background: '#1a1a1a' }}>
+            {/* Browser chrome */}
+            <div style={{ background: '#111', borderBottom: '1px solid #2a2a2a', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#ef4444', display: 'inline-block' }} />
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#f59e0b', display: 'inline-block' }} />
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#10b981', display: 'inline-block' }} />
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <span style={{ background: '#1e1e1e', borderRadius: 6, padding: '4px 24px', fontSize: 12, color: '#666', fontFamily: "'JetBrains Mono', monospace" }}>synera-sip.vercel.app</span>
+              </div>
+            </div>
+
+            {/* Mockup content */}
+            <div style={{ background: '#0d0d0d', padding: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+                {[
+                  { label: 'Total Alerts', val: '247' },
+                  { label: 'Active Threats', val: '12' },
+                  { label: 'Blocked IPs', val: '38' },
+                  { label: 'AI Insights', val: '189' },
+                ].map((s) => (
+                  <div key={s.label} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, padding: '14px 16px' }}>
+                    <p style={{ fontSize: 10, color: '#4b5563', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 4 }}>{s.label}</p>
+                    <p style={{ fontSize: 22, fontWeight: 700, color: 'white', fontFamily: "'JetBrains Mono', monospace" }}>{s.val}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {mockAlerts.map((a, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: i === 0 ? '#1a0a0a' : '#111', border: i === 0 ? '1px solid #2a1a1a' : '1px solid #1e1e1e', borderRadius: 8, padding: '10px 16px', transition: 'all 0.4s ease' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: '#4b5563' }}>{a.time}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'white', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.sig}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: '#4b5563' }}>{a.ip}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: `${sevColor[a.sev]}18`, color: sevColor[a.sev], border: `1px solid ${sevColor[a.sev]}30`, letterSpacing: 1 }}>{a.sev}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 border-y border-[#1e1e2e] bg-[#111118]/50">
-        <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-          <div className="space-y-3">
-             <h2 className="text-[48px] font-bold tracking-tight">40,000+</h2>
-             <p className="text-[#94a3b8] font-medium tracking-wide uppercase text-sm">Threat Signatures</p>
-          </div>
-          <div className="space-y-3">
-             <h2 className="text-[48px] font-bold tracking-tight text-[#6366f1]">&lt;3s</h2>
-             <p className="text-[#94a3b8] font-medium tracking-wide uppercase text-sm">Detection Time</p>
-          </div>
-          <div className="space-y-3">
-             <h2 className="text-[48px] font-bold tracking-tight">99.9%</h2>
-             <p className="text-[#94a3b8] font-medium tracking-wide uppercase text-sm">Uptime Guarantee</p>
-          </div>
+      {/* ── TRUST LOGOS ── */}
+      <section style={{ background: 'white', padding: '48px 40px', borderBottom: '1px solid #f0f0f0', textAlign: 'center' }}>
+        <p style={{ color: '#9ca3af', fontSize: 12, letterSpacing: 2, marginBottom: 24, textTransform: 'uppercase', fontWeight: 600 }}>Powered by open source technology</p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+          {['Suricata', 'MaxMind', 'Supabase', 'Anthropic AI', 'Vercel'].map((n) => (
+            <span key={n} style={{ border: '1px solid #e5e7eb', borderRadius: 999, padding: '12px 24px', fontSize: 14, color: '#6b7280', fontWeight: 500 }}>{n}</span>
+          ))}
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-32 px-8">
-        <div className="max-w-7xl mx-auto space-y-20">
-          <div className="text-center space-y-4">
-             <span className="text-[11px] font-bold text-[#6366f1] tracking-[3px] uppercase">Capabilities</span>
-             <h2 className="text-3xl font-bold">Everything you need to stay protected</h2>
+      {/* ── FEATURES ── */}
+      <section id="features" style={{ background: 'white', padding: '120px 40px' }}>
+        <div ref={featRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <p style={{ color: '#6b7280', fontSize: 12, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16, fontWeight: 600 }}>FEATURES</p>
+            <h2 className="font-display" style={{ fontSize: 48, fontWeight: 700, color: '#0a0a0a', marginBottom: 16 }}>Everything you need to stay protected</h2>
+            <p style={{ color: '#6b7280', fontSize: 18 }}>Built for business owners, not security experts.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }} className="reveal-children">
             {[
-              { icon: Shield, title: 'Real-Time Detection', text: 'Suricata IDS engine monitors every packet on your network, 24/7.' },
-              { icon: Zap, title: 'AI Threat Explanation', text: 'Claude AI explains every alert in plain English — no security degree required.' },
-              { icon: Ban, title: 'Auto-Block Attackers', text: 'Malicious IPs are automatically blocked the moment they cross your threshold.' },
-              { icon: Globe, title: 'Global Threat Map', text: 'See exactly where attacks are coming from on a live world map.' },
-              { icon: Database, title: '40,000+ Signatures', text: 'Emerging Threats ruleset keeps you protected against known attack patterns.' },
-              { icon: Cpu, title: 'Runs on Raspberry Pi', text: 'Deploy on affordable hardware. Full enterprise protection for under $100 setup cost.' },
+              { title: 'Real-Time Detection', desc: 'Suricata IDS engine monitors every packet on your network, 24/7.', bg: '#f0fdf4', mockup: (
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#16a34a', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <span>→ Suricata listening on eth0</span>
+                  <span>→ Packet captured: 192.168.1.1</span>
+                  <span style={{ color: '#ef4444' }}>→ ALERT: ET SCAN detected</span>
+                </div>
+              )},
+              { title: 'AI Threat Explanation', desc: 'Claude AI explains every alert in plain English — no security degree required.', bg: '#faf5ff', mockup: (
+                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ background: '#1e1e2e', borderRadius: '12px 12px 12px 2px', padding: '10px 14px', fontSize: 12, color: 'white', maxWidth: '85%', fontWeight: 500 }}>ET SCAN SSH brute force probe</div>
+                  <div style={{ background: 'white', borderRadius: '12px 12px 2px 12px', padding: '10px 14px', fontSize: 12, color: '#374151', maxWidth: '90%', alignSelf: 'flex-end', border: '1px solid #e5e7eb', lineHeight: 1.5 }}>An attacker from Germany is trying to break into your SSH server using automated password guessing…</div>
+                </div>
+              )},
+              { title: 'Auto-Block Engine', desc: 'Malicious IPs are automatically blocked the moment they cross your threshold.', bg: '#fff1f2', mockup: (
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <span style={{ color: '#ef4444' }}>45.33.32.156 ✗ BLOCKED</span>
+                  <span style={{ color: '#ef4444' }}>192.241.218.x ✗ BLOCKED</span>
+                  <span style={{ color: '#ef4444' }}>38.60.251.18 ✗ BLOCKED</span>
+                  <span style={{ color: '#9ca3af', marginTop: 4 }}>3 IPs quarantined today</span>
+                </div>
+              )},
+              { title: 'Global Threat Map', desc: 'See exactly where attacks are coming from on a live world map.', bg: '#eff6ff', mockup: (
+                <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg viewBox="0 0 200 100" width="160" style={{ opacity: 0.15 }}><ellipse cx="100" cy="50" rx="90" ry="40" fill="none" stroke="#0a0a0a" strokeWidth="0.5" /><line x1="10" y1="50" x2="190" y2="50" stroke="#0a0a0a" strokeWidth="0.3" /><line x1="100" y1="10" x2="100" y2="90" stroke="#0a0a0a" strokeWidth="0.3" /></svg>
+                  {[[60, 35], [130, 45], [80, 55], [150, 30]].map(([cx, cy], i) => (
+                    <React.Fragment key={i}>
+                      <span style={{ position: 'absolute', left: cx * 0.8, top: cy * 2, width: 6, height: 6, borderRadius: 99, background: '#ef4444' }} />
+                      <span style={{ position: 'absolute', left: cx * 0.8 - 4, top: cy * 2 - 4, width: 14, height: 14, borderRadius: 99, border: '2px solid #ef4444', opacity: 0.4, animation: 'pulseGlow 2s infinite', animationDelay: `${i * 0.4}s` }} />
+                    </React.Fragment>
+                  ))}
+                </div>
+              )},
+              { title: '40,000+ Signatures', desc: 'Emerging Threats ruleset keeps you protected against known attack patterns.', bg: '#f0fdf4', mockup: (
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#374151', padding: 20, display: 'flex', flexDirection: 'column', gap: 6, overflow: 'hidden', height: '100%' }}>
+                  {['ET SCAN Nmap -sS', 'ET DOS SYN flood', 'ET MALWARE C2 callback', 'ET EXPLOIT CVE-2024-xxx', 'ET POLICY NTP monlist', 'ET SCAN SSH brute'].map((r, i) => (
+                    <span key={i} style={{ opacity: 0.4 + i * 0.1 }}>{r}</span>
+                  ))}
+                </div>
+              )},
+              { title: 'Runs on Raspberry Pi', desc: 'Deploy on affordable hardware. Full enterprise protection for under ₹5,000 setup cost.', bg: '#fefce8', mockup: (
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#374151', padding: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <span>Device: Raspberry Pi 4</span>
+                  <span>RAM: 2GB</span>
+                  <span>Storage: 32GB SD</span>
+                  <span style={{ color: '#16a34a', fontWeight: 600 }}>Cost: ~₹4,000</span>
+                </div>
+              )},
             ].map((f, i) => (
-              <div key={i} className="glass-card p-8 group hover:translate-y-[-2px] hover:shadow-elevated transition-all duration-300">
-                 <div className="h-12 w-12 bg-[#6366f110] text-[#6366f1] rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <f.icon size={24} />
-                 </div>
-                 <h3 className="text-lg font-bold mb-3">{f.title}</h3>
-                 <p className="text-sm text-[#94a3b8] leading-relaxed">{f.text}</p>
+              <div key={i} className="reveal" style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', transition: 'transform 0.3s, box-shadow 0.3s', cursor: 'default' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.08)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}>
+                <div style={{ height: 200, background: f.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>{f.mockup}</div>
+                <div style={{ padding: 24 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0a0a0a', marginBottom: 8 }}>{f.title}</h3>
+                  <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>{f.desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-32 bg-[#111118]/50 border-y border-[#1e1e2e] relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-8 relative z-10">
-          <div className="text-center mb-24 space-y-4">
-             <h2 className="text-3xl font-bold">From packet to protection in seconds</h2>
-          </div>
-          
-          <div className="relative">
-             <div className="absolute top-[28px] left-[40px] right-[40px] h-[2px] bg-[#1e1e2e]" />
-             <div className="absolute top-[28px] left-[40px] h-[2px] bg-[#6366f1] transition-all duration-1000" style={{ width: `${(activeStep / 3) * 100}%` }} />
-             
-             <div className="grid grid-cols-4 gap-4 relative">
-                {[
-                  { icon: Wifi, title: 'Network Traffic', desc: 'Traffic enters your network' },
-                  { icon: Search, title: 'Suricata Scans', desc: 'Deep packet inspection fires' },
-                  { icon: Brain, title: 'AI Analyzes', desc: 'Claude explains the threat' },
-                  { icon: Shield, title: 'Auto-Response', desc: 'Attacker blocked instantly' },
-                ].map((s, i) => (
-                   <div key={i} className="flex flex-col items-center gap-6 text-center">
-                      <div className={`h-14 w-14 rounded-full border-2 flex items-center justify-center z-10 transition-all duration-500 ${activeStep === i ? 'bg-[#6366f1] border-[#6366f1] text-white shadow-[0_0_30px_rgba(99,102,241,0.5)]' : 'bg-[#0a0a0f] border-[#2a2a3a] text-[#475569]'}`}>
-                         <s.icon size={24} />
-                      </div>
-                      <div className="space-y-2">
-                         <p className={`text-sm font-bold transition-colors ${activeStep === i ? 'text-white' : 'text-[#475569]'}`}>{s.title}</p>
-                         <p className="text-xs text-[#94a3b8] hidden md:block">{s.desc}</p>
-                      </div>
-                   </div>
-                ))}
-             </div>
+      {/* ── HOW IT WORKS ── */}
+      <section id="how-it-works" style={{ background: '#0f0f0f', padding: '120px 40px' }}>
+        <div ref={howRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
+          <h2 className="font-display" style={{ fontSize: 56, color: 'white', fontWeight: 700, marginBottom: 16 }}>Protect your network in 3 easy steps</h2>
+          <p style={{ color: '#9ca3af', fontSize: 18, marginBottom: 80 }}>From setup to protection in under an hour</p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+            {[
+              { num: '01', title: 'Install on Raspberry Pi', text: 'Run our one-command setup script. Suricata and all dependencies install automatically.', code: './setup.sh' },
+              { num: '02', title: 'Connect to your router', text: 'Plug your Pi into your router via ethernet. Synera instantly begins monitoring all network traffic.', code: null },
+              { num: '03', title: 'Open your dashboard', text: 'Log into your secure dashboard from any browser. See threats, AI explanations, and blocked IPs live.', code: null },
+            ].map((step, i) => (
+              <div key={i} style={{ background: '#1a1a1a', border: `1px solid ${activeStep === i ? '#444' : '#2a2a2a'}`, borderRadius: 16, padding: 32, textAlign: 'left', transition: 'border-color 0.4s' }}>
+                <span style={{ fontSize: 12, color: '#4b5563', fontWeight: 700, letterSpacing: 2 }}>{step.num}</span>
+                <h3 style={{ fontSize: 20, color: 'white', fontWeight: 700, margin: '16px 0 12px' }}>{step.title}</h3>
+                <p style={{ fontSize: 14, color: '#9ca3af', lineHeight: 1.7, marginBottom: step.code ? 20 : 0 }}>{step.text}</p>
+                {step.code && (
+                  <div style={{ background: '#111', border: '1px solid #333', borderRadius: 8, padding: 12 }}>
+                    <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#10b981' }}>{step.code}</code>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-32 px-8">
-        <div className="max-w-7xl mx-auto space-y-20">
-          <div className="text-center space-y-4">
-             <h2 className="text-3xl font-bold">Simple, transparent pricing</h2>
-             <p className="text-[#94a3b8]">No hidden fees. Cancel anytime.</p>
+      {/* ── STATS ── */}
+      <section style={{ background: 'white', padding: '80px 40px', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0' }}>
+        <div ref={statsRef} className="reveal" style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1px 1fr 1px 1fr', alignItems: 'center', textAlign: 'center', gap: 0 }}>
+          {[
+            { num: '40,000+', label: 'Threat Signatures' },
+            null,
+            { num: '<3s', label: 'Detection Time' },
+            null,
+            { num: '100%', label: 'Open Source' },
+          ].map((item, i) =>
+            item === null ? (
+              <div key={i} style={{ width: 1, height: 60, background: '#e5e7eb', margin: '0 auto' }} />
+            ) : (
+              <div key={i}>
+                <h2 className="font-display" style={{ fontSize: 56, fontWeight: 700, color: '#0a0a0a' }}>{item.num}</h2>
+                <p style={{ fontSize: 14, color: '#6b7280', marginTop: 8 }}>{item.label}</p>
+              </div>
+            )
+          )}
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="pricing" style={{ background: 'white', padding: '120px 40px' }}>
+        <div ref={pricingRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <h2 className="font-display" style={{ fontSize: 56, fontWeight: 700, color: '#0a0a0a', marginBottom: 16 }}>Pricing Plan</h2>
+            <p style={{ color: '#6b7280', fontSize: 18 }}>Simple, transparent pricing. Cancel anytime.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-             {/* Starter */}
-             <div className="glass-card p-10 space-y-8 flex flex-col">
-                <div className="space-y-2">
-                   <h3 className="text-xl font-bold">Starter</h3>
-                   <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-bold">₹999</span>
-                      <span className="text-[#94a3b8]">/mo</span>
-                   </div>
-                   <p className="text-xs text-[#94a3b8]">For solo entrepreneurs</p>
-                </div>
-                <div className="flex-1 space-y-4">
-                   {[
-                     '1 network monitored',
-                     'Up to 1,000 alerts/day',
-                     'AI explanations',
-                     'Email notifications',
-                     'Community support'
-                   ].map(t => (
-                      <div key={t} className="flex items-center gap-3 text-sm text-[#94a3b8]">
-                         <CheckCircle size={14} className="text-[#10b981]" />
-                         {t}
-                      </div>
-                   ))}
-                </div>
-                <button className="w-full btn-ghost py-4 font-bold">Download Now</button>
-             </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 24, alignItems: 'stretch' }}>
+            {/* Business — featured */}
+            <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 20, padding: 40, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: '#0a0a0a' }}>Business Plan</h3>
+                <span style={{ background: '#0a0a0a', color: 'white', borderRadius: 999, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>Most Popular</span>
+              </div>
+              <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 20 }}>Best for small teams</p>
+              <p style={{ fontSize: 48, fontWeight: 700, color: '#0a0a0a', marginBottom: 24 }}>₹2,999<span style={{ fontSize: 16, fontWeight: 400, color: '#6b7280' }}>/mo</span></p>
+              <button style={{ width: '100%', background: '#0a0a0a', color: 'white', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', marginBottom: 32 }}>Download Now</button>
 
-             {/* Business - Featured */}
-             <div className="glass-card border-[#6366f1] shadow-glow p-12 space-y-8 flex flex-col transform md:scale-110 relative z-20">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#6366f1] text-white text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-widest">
-                   Most Popular
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 24 }}>
+                <p style={{ fontSize: 12, color: '#6b7280', letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600, marginBottom: 20 }}>What's Included</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {['3 networks monitored', 'Unlimited alerts per day', 'AI explanations on every threat', 'Auto-block malicious IPs', 'Global threat map', 'Priority email support', 'Weekly threat summary report'].map((f) => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, color: '#374151' }}>
+                      <span style={{ width: 20, height: 20, borderRadius: 999, background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>✓</span>
+                      {f}
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-2 text-center">
-                   <h3 className="text-xl font-bold">Business</h3>
-                   <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-5xl font-bold text-white">₹2,999</span>
-                      <span className="text-[#94a3b8]">/mo</span>
-                   </div>
-                   <p className="text-xs text-[#94a3b8]">For small teams (5-50 employees)</p>
-                </div>
-                <div className="flex-1 space-y-4">
-                   {[
-                     '3 networks monitored',
-                     'Unlimited alerts',
-                     'AI reports & insights',
-                     'Auto-block engine',
-                     'Priority email support',
-                     'Full threat map'
-                   ].map(t => (
-                      <div key={t} className="flex items-center gap-3 text-sm text-[#f8fafc]">
-                         <CheckCircle size={16} className="text-[#6366f1]" />
-                         {t}
-                      </div>
-                   ))}
-                </div>
-                <button className="w-full bg-[#6366f1] text-white py-4 font-bold shadow-lg">Download Now</button>
-             </div>
+              </div>
+            </div>
 
-             {/* Enterprise */}
-             <div className="glass-card p-10 space-y-8 flex flex-col">
-                <div className="space-y-2">
-                   <h3 className="text-xl font-bold">Enterprise</h3>
-                   <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-bold">₹7,999</span>
-                      <span className="text-[#94a3b8]">/mo</span>
-                   </div>
-                   <p className="text-xs text-[#94a3b8]">For multi-location businesses</p>
+            {/* Right stack */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {/* Starter */}
+              <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 16, padding: 28, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0a0a0a', marginBottom: 4 }}>Starter</h3>
+                  <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>For solo entrepreneurs</p>
+                  <p style={{ fontSize: 36, fontWeight: 700, color: '#0a0a0a' }}>₹999<span style={{ fontSize: 14, fontWeight: 400, color: '#6b7280' }}>/mo</span></p>
                 </div>
-                <div className="flex-1 space-y-4">
-                   {[
-                     'Unlimited networks',
-                     'Custom detection rules',
-                     'Dedicated support agent',
-                     '99.9% SLA guarantee',
-                     'On-site assistance'
-                   ].map(t => (
-                      <div key={t} className="flex items-center gap-3 text-sm text-[#94a3b8]">
-                         <CheckCircle size={14} className="text-[#10b981]" />
-                         {t}
-                      </div>
-                   ))}
+                <button style={{ width: '100%', background: 'transparent', border: '1px solid #e5e7eb', borderRadius: 12, padding: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#0a0a0a', marginTop: 20 }}>Download Now</button>
+              </div>
+
+              {/* Enterprise */}
+              <div style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 16, padding: 28, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 4 }}>Enterprise</h3>
+                  <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>Unlimited everything</p>
+                  <p style={{ fontSize: 36, fontWeight: 700, color: 'white' }}>₹7,999<span style={{ fontSize: 14, fontWeight: 400, color: '#9ca3af' }}>/mo</span></p>
                 </div>
-                <button className="w-full btn-ghost py-4 font-bold">Contact Us</button>
-             </div>
+                <button style={{ width: '100%', background: 'transparent', border: '1px solid #444', borderRadius: 12, padding: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'white', marginTop: 20 }}>Contact Us</button>
+              </div>
+            </div>
+          </div>
+
+          {/* All plans include */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 40, flexWrap: 'wrap' }}>
+            {['Real-time Detection', 'AI Analysis', 'Auto-blocking', 'Threat Map'].map((p) => (
+              <span key={p} style={{ border: '1px solid #e5e7eb', borderRadius: 999, padding: '8px 18px', fontSize: 13, color: '#6b7280' }}>{p}</span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-20 bg-[#0a0a0f] border-t border-[#1e1e2e]">
-        <div className="max-w-7xl mx-auto px-8 flex flex-col items-center text-center space-y-12">
-           <div className="flex items-center gap-3">
-              <Shield className="text-[#6366f1]" size={32} />
-              <span className="text-2xl font-bold tracking-tight">Synera</span>
-           </div>
-           
-           <div className="flex items-center gap-8 text-sm text-[#94a3b8]">
-              <a href="#features" className="hover:text-white transition-colors">Features</a>
-              <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-              <Link to="/about" className="hover:text-white transition-colors">About</Link>
-           </div>
-
-           <div className="space-y-2">
-              <p className="text-[#475569] text-xs">Built with ❤️ by Team Synera in a dorm room.</p>
-              <p className="text-[#475569] text-xs">© 2026 Synera. All rights reserved.</p>
-           </div>
+      {/* ── FAQ ── */}
+      <section id="faq" style={{ background: 'white', padding: '120px 40px' }}>
+        <div ref={faqRef} className="reveal" style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <h2 className="font-display" style={{ fontSize: 56, fontWeight: 700, color: '#0a0a0a', textAlign: 'center', marginBottom: 64 }}>Frequently Asked Questions</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <FaqItem q="What is Synera?" a="Synera is a real-time network intrusion detection system that monitors your business network and alerts you to cyber threats." />
+              <FaqItem q="Do I need IT experience?" a="Not at all. Synera's AI explains every alert in plain English. If you can read an email, you can understand our alerts." />
+              <FaqItem q="What hardware do I need?" a="A Raspberry Pi 4 (around ₹4,000) connected to your router via ethernet cable. That's it." />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <FaqItem q="Is my data stored securely?" a="Yes. All alerts are stored in your private Supabase database. We never access your data." />
+              <FaqItem q="How quickly does it detect threats?" a="Synera detects most threats in under 3 seconds of the malicious packet hitting your network." />
+              <FaqItem q="Can I cancel my subscription?" a="Yes, cancel anytime from your account settings. No long-term commitments." />
+            </div>
+          </div>
         </div>
-      </footer>
+      </section>
+
+      <LandingFooter />
     </div>
   );
 };
