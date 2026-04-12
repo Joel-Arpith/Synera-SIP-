@@ -1,179 +1,192 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { 
-  ShieldAlert, 
-  Unlock, 
-  Search, 
-  Filter, 
-  MoreVertical,
-  Flag,
-  Calendar,
-  AlertOctagon
+  Ban, 
+  Trash2, 
+  Globe, 
+  Calendar, 
+  ShieldAlert,
+  Search,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
+import Badge from '../components/Badge';
+import Card from '../components/Card';
+import EmptyState from '../components/EmptyState';
 import { format } from 'date-fns';
 
 const BlockedIPs = () => {
   const [blocked, setBlocked] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showConfirm, setShowConfirm] = useState(null);
 
   useEffect(() => {
     fetchBlocked();
-
-    const channel = supabase
-      .channel('blocked-sync')
-      .on('postgres_changes', { event: '*', table: 'blocked_ips' }, () => {
-        fetchBlocked();
-      })
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
-  }, []);
+  }, [searchTerm]);
 
   const fetchBlocked = async () => {
-    setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from('blocked_ips')
       .select('*')
-      .order('timestamp', { ascending: false });
+      .order('blocked_at', { ascending: false });
+
+    if (searchTerm) {
+      query = query.ilike('ip_address', `%${searchTerm}%`);
+    }
+
+    const { data } = await query;
     if (data) setBlocked(data);
     setLoading(false);
   };
 
   const handleUnblock = async (ip) => {
-    if (!confirm(`Are you sure you want to unblock ${ip}? This will restore its access to the network.`)) return;
-
-    try {
-        const response = await fetch('/api/unblock-ip', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: json.stringify({ ip })
-        });
-        
-        // If local API fails (e.g. Pi is offline), we can still update Supabase directly as a fallback
-        const { error } = await supabase
-            .from('blocked_ips')
-            .update({ unblocked: true })
-            .eq('ip', ip);
-            
-        if (error) throw error;
-        alert(`${ip} has been unblocked.`);
-    } catch (e) {
-        console.error(e);
-        alert('Failed to unblock IP. Check console for details.');
+    const { error } = await supabase
+      .from('blocked_ips')
+      .delete()
+      .eq('ip_address', ip);
+    
+    if (!error) {
+       setBlocked(prev => prev.filter(b => b.ip_address !== ip));
+       setShowConfirm(null);
+       // Also log unblock activity or refresh stats if needed
     }
   };
 
-  const filtered = blocked.filter(item => 
-    item.ip.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.reason.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 animate-fade">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-3">
-            <ShieldAlert className="h-6 w-6 text-danger" />
-            Firewall Controls
+            <Ban className="h-6 w-6 text-[#ef4444]" />
+            Firewall Policy
           </h1>
-          <p className="text-gray-400 text-sm">Manage automated and manual IP blocking rules</p>
+          <p className="text-[#94a3b8] text-sm">Active IP blocks currently being enforced by the edge IDS</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-            <input 
-              type="text" 
-              placeholder="Search by IP or Reason..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-border/30 border border-border rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-cyan-primary transition-all w-64"
-            />
-          </div>
-          <button className="p-2 bg-border/50 border border-border rounded-lg hover:bg-white/5 transition-all">
-            <Filter className="h-4 w-4" />
-          </button>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#475569]" />
+          <input 
+            type="text" 
+            placeholder="Search restricted IPs..."
+            className="bg-[#111118] border border-[#2a2a3a] text-[#f8fafc] h-11 pl-10 pr-4 w-[320px] rounded-[12px] text-sm focus:border-[#ef4444] outline-none transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <div className="overflow-x-auto">
+      <Card 
+        title="Restricted Access List" 
+        icon={ShieldAlert}
+        action={
+           <div className="flex items-center gap-2 text-[10px] font-bold text-[#ef4444] tracking-[0.2em] uppercase">
+              <div className="h-1.5 w-1.5 rounded-full bg-[#ef4444] animate-pulse" />
+              Active Quarantine
+           </div>
+        }
+      >
+        <div className="overflow-x-auto min-h-[400px]">
           <table className="soc-table">
             <thead>
               <tr>
-                <th>Target IP</th>
-                <th>Country</th>
-                <th>Trigger Reason</th>
-                <th>Strikes</th>
-                <th>Timestamp</th>
-                <th>Status</th>
-                <th className="text-right">Action</th>
+                <th>Origin / Network Address</th>
+                <th>Region</th>
+                <th>Violation Reason</th>
+                <th>Enforced Since</th>
+                <th>Attack Count</th>
+                <th className="text-right">Management</th>
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr>
-                   <td colSpan="7" className="text-center py-20 text-gray-600">Loading firewall data...</td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                   <td colSpan="7" className="text-center py-20">
-                     <div className="flex flex-col items-center gap-2 opacity-30">
-                        <AlertOctagon className="h-10 w-10" />
-                        <p className="text-sm font-bold uppercase tracking-widest">No Active Blocks Found</p>
+              {blocked.map((block) => (
+                <tr key={block.id} className="group hover:bg-[#ef444405]">
+                  <td>
+                     <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-[#ef444410] text-[#ef4444]">
+                           <ShieldAlert size={16} />
+                        </div>
+                        <span className="font-mono text-sm font-bold text-[#ef4444]">{block.ip_address}</span>
                      </div>
-                   </td>
-                </tr>
-              ) : filtered.map((item) => (
-                <tr key={item.ip} className={item.unblocked ? 'opacity-50' : ''}>
-                  <td>
-                    <div className="flex items-center gap-3">
-                        <div className={`h-2 w-2 rounded-full ${item.unblocked ? 'bg-gray-500' : 'bg-danger animate-pulse'}`} />
-                        <span className="font-bold text-white tracking-tight">{item.ip}</span>
-                    </div>
                   </td>
                   <td>
-                    <div className="flex items-center gap-2">
-                        <Flag className="h-3 w-3 text-gray-500" />
-                        <span className="text-xs uppercase">{item.country || 'Unknown'}</span>
-                    </div>
+                     <div className="flex items-center gap-2 text-[#94a3b8]">
+                        <Globe size={14} className="opacity-40" />
+                        <span className="text-sm font-medium">{block.country || 'N/A'}</span>
+                     </div>
                   </td>
-                  <td className="max-w-xs truncate text-xs text-gray-400 italic">
-                    {item.reason}
-                  </td>
-                  <td>
-                    <span className="font-mono text-danger font-bold bg-danger/10 px-1.5 py-0.5 rounded">
-                        {item.alert_count} Hits
-                    </span>
+                  <td className="max-w-[240px] truncate text-xs text-[#94a3b8]">
+                     {block.reason || 'Threshold Exceeded'}
                   </td>
                   <td>
-                    <div className="flex items-center gap-2 text-gray-500">
-                        <Calendar className="h-3 w-3" />
-                        <span>{format(new Date(item.timestamp), 'MMM dd, HH:mm')}</span>
-                    </div>
+                     <div className="flex items-center gap-2 text-[#475569] font-mono text-[11px]">
+                        <Calendar size={12} />
+                        {format(new Date(block.blocked_at), 'yyyy-MM-dd HH:mm')}
+                     </div>
                   </td>
                   <td>
-                    <span className={`badge ${item.unblocked ? 'badge-low' : 'badge-critical'}`}>
-                        {item.unblocked ? 'Unblocked' : 'Active'}
-                    </span>
+                     <Badge type="high">{block.alert_count || 1}x Alerts</Badge>
                   </td>
                   <td className="text-right">
-                    {!item.unblocked && (
+                     {showConfirm === block.ip_address ? (
+                        <div className="flex items-center justify-end gap-2 animate-fade">
+                           <button 
+                             onClick={() => handleUnblock(block.ip_address)}
+                             className="p-1 px-3 bg-[#ef4444] text-white text-[10px] font-bold uppercase rounded hover:bg-[#dc2626] transition-colors"
+                           >
+                              Confirm
+                           </button>
+                           <button 
+                             onClick={() => setShowConfirm(null)}
+                             className="p-1 px-3 bg-[#111118] border border-[#2a2a3a] text-[#94a3b8] text-[10px] font-bold uppercase rounded hover:text-white transition-colors"
+                           >
+                              Cancel
+                           </button>
+                        </div>
+                     ) : (
                         <button 
-                            onClick={() => handleUnblock(item.ip)}
-                            className="p-2 hover:bg-danger/10 text-danger rounded-lg transition-all group"
+                          onClick={() => setShowConfirm(block.ip_address)}
+                          className="p-2 text-[#475569] hover:text-[#ef4444] hover:bg-[#ef444410] rounded-lg transition-all"
                         >
-                            <Unlock className="h-4 w-4 group-hover:-rotate-12 transition-transform" />
+                           <Trash2 size={18} />
                         </button>
-                    )}
+                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {!loading && blocked.length === 0 && (
+            <EmptyState 
+              icon={CheckCircle2} 
+              title="Clean Perimeter" 
+              message="No IP addresses are currently flagged for blocking. All traffic is being routed normally." 
+            />
+          )}
+
+          {loading && (
+             <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="h-8 w-8 border-2 border-[#ef444430] border-t-[#ef4444] rounded-full animate-spin" />
+                <p className="text-xs font-mono text-[#475569] uppercase tracking-[0.3em]">Synching Policy Engine...</p>
+             </div>
+          )}
         </div>
-      </div>
+      </Card>
+
+      {/* Warning Alert */}
+      {blocked.length > 50 && (
+         <div className="p-4 bg-[#f59e0b10] border border-[#f59e0b30] rounded-xl flex items-center gap-4 text-[#f59e0b]">
+            <span className="h-10 w-10 shrink-0 rounded-lg bg-[#f59e0b15] flex items-center justify-center">
+               <ShieldAlert size={20} />
+            </span>
+            <div className="space-y-1">
+               <p className="text-sm font-bold tracking-tight">Large Quarantine Warning</p>
+               <p className="text-xs opacity-80">You have over {blocked.length} active blocks. Consider reviewing older restrictions to optimize network performance.</p>
+            </div>
+         </div>
+      )}
     </div>
   );
 };

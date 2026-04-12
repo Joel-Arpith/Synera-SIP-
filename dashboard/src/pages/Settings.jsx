@@ -2,264 +2,262 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { 
   Settings as SettingsIcon, 
-  Shield, 
-  Mail, 
+  Ban, 
+  Zap, 
   Save, 
-  AlertTriangle,
-  Info,
-  CheckCircle,
-  Database
+  Info, 
+  Cpu, 
+  Clock,
+  Layers,
+  BrainCircuit,
+  Lock,
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
+import Card from '../components/Card';
 
 const Settings = () => {
-  const [settings, setSettings] = useState({
-    auto_block_enabled: true,
-    strike_threshold: 5,
-    window_minutes: 5,
-    email_notifications: false,
-    alert_email: '',
+  const [config, setConfig] = useState({
+    auto_block: true,
+    strike_threshold: 3,
+    time_window_minutes: 60,
     llm_enabled: true,
     llm_min_severity: 'high'
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [saveStatus, setSaveStatus] = useState(null);
 
   useEffect(() => {
-    fetchSettings();
+    fetchConfig();
   }, []);
 
-  const fetchSettings = async () => {
-    const { data } = await supabase
-      .from('system_config')
-      .select('*')
-      .eq('id', 'settings')
-      .single();
-    if (data) setSettings(data);
-    setLoading(false);
+  const fetchConfig = async () => {
+    const { data } = await supabase.from('config').select('*').single();
+    if (data) setConfig(data);
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const handleSave = async () => {
     setSaving(true);
-    setMessage({ type: '', text: '' });
-
     const { error } = await supabase
-      .from('system_config')
-      .update(settings)
-      .eq('id', 'settings');
-
-    if (error) {
-        setMessage({ type: 'error', text: error.message });
-    } else {
-        setMessage({ type: 'success', text: 'System configuration updated successfully.' });
-        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-    }
+      .from('config')
+      .upsert({ id: config.id || 1, ...config });
+    
     setSaving(false);
+    setSaveStatus(error ? 'Error saving configuration' : 'Policy updated successfully');
+    setTimeout(() => setSaveStatus(null), 3000);
   };
-
-  if (loading) return <div className="text-gray-500 p-10 animate-pulse">Loading system configuration...</div>;
 
   return (
-    <div className="max-w-4xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-3">
-          <SettingsIcon className="h-6 w-6 text-gray-400" />
-          General Settings
-        </h1>
-        <p className="text-gray-400 text-sm">Configure global IDS parameters and response policies</p>
+    <div className="space-y-8 animate-fade">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-3">
+            <SettingsIcon className="h-6 w-6 text-[#94a3b8]" />
+            System Control
+          </h1>
+          <p className="text-[#94a3b8] text-sm">Fine-tune detection sensitivity and automated response logic</p>
+        </div>
+        
+        <button 
+          onClick={handleSave}
+          disabled={saving}
+          className="h-11 px-6 bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold rounded-[12px] flex items-center gap-3 shadow-lg shadow-[#6366f120] transition-all active:scale-[0.98] disabled:opacity-50"
+        >
+          {saving ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
+          {saving ? 'Synchronizing...' : 'Commit Changes'}
+        </button>
       </div>
 
-      {message.text && (
-        <div className={`p-4 rounded-xl border flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
-            message.type === 'success' ? 'bg-success/10 border-success/20 text-success' : 'bg-danger/10 border-danger/20 text-danger'
-        }`}>
-            {message.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
-            <span className="text-sm font-medium">{message.text}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pb-20">
+        {/* Left Column: Core IDS Settings */}
+        <div className="lg:col-span-7 space-y-8">
+           <Card 
+             title="Automated Defense Pipeline" 
+             subtitle="Configure real-time IP restriction rules" 
+             icon={Ban}
+            >
+              <div className="space-y-10 py-4">
+                 <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                       <p className="text-sm font-bold text-[#f8fafc]">Active Remediation</p>
+                       <p className="text-xs text-[#94a3b8]">Immediately drop traffic from flagged IP addresses</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={config.auto_block}
+                        onChange={(e) => setConfig({...config, auto_block: e.target.checked})}
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-[#1a1a24] border border-[#2a2a3a] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-[#475569] peer-checked:after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#6366f1] peer-checked:border-[#6366f130]"></div>
+                    </label>
+                 </div>
+
+                 <div className="space-y-6">
+                    <div className="flex justify-between items-end">
+                       <div className="space-y-1">
+                          <p className="text-sm font-bold text-[#f8fafc]">Strike Threshold</p>
+                          <p className="text-xs text-[#94a3b8]">Number of alerts before IP is quarantined</p>
+                       </div>
+                       <span className="font-mono text-lg font-bold text-[#6366f1] bg-[#6366f110] px-3 py-1 rounded-lg border border-[#6366f120]">
+                          {config.strike_threshold} Event(s)
+                       </span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="10" 
+                      value={config.strike_threshold}
+                      onChange={(e) => setConfig({...config, strike_threshold: parseInt(e.target.value)})}
+                      className="w-full h-1.5 bg-[#1a1a24] rounded-lg appearance-none cursor-pointer accent-[#6366f1]"
+                    />
+                    <div className="flex justify-between text-[10px] font-bold text-[#475569] uppercase tracking-widest px-1">
+                       <span>Aggressive (1)</span>
+                       <span>Medium (5)</span>
+                       <span>Relaxed (10)</span>
+                    </div>
+                 </div>
+
+                 <div className="space-y-6">
+                    <div className="flex justify-between items-end">
+                       <div className="space-y-1">
+                          <p className="text-sm font-bold text-[#f8fafc]">Observation Window</p>
+                          <p className="text-xs text-[#94a3b8]">Rolling window for event correlation</p>
+                       </div>
+                       <span className="font-mono text-lg font-bold text-[#94a3b8] bg-[#1a1a24] px-3 py-1 rounded-lg border border-[#2a2a3a]">
+                          {config.time_window_minutes} Minutes
+                       </span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="5" 
+                      max="120" 
+                      step="5"
+                      value={config.time_window_minutes}
+                      onChange={(e) => setConfig({...config, time_window_minutes: parseInt(e.target.value)})}
+                      className="w-full h-1.5 bg-[#1a1a24] rounded-lg appearance-none cursor-pointer accent-[#6366f1]"
+                    />
+                 </div>
+              </div>
+           </Card>
+
+           <Card title="Database & Storage" icon={Layers}>
+              <div className="space-y-6 py-2">
+                 <div className="flex items-center justify-between p-4 bg-[#0a0a0f] rounded-xl border border-[#2a2a3a]">
+                    <div className="flex items-center gap-4">
+                       <div className="p-3 rounded-lg bg-[#3b82f610] text-[#3b82f6]">
+                          <Info size={20} />
+                       </div>
+                       <div className="space-y-0.5">
+                          <p className="text-xs font-bold text-[#f8fafc]">Alert Retention Policy</p>
+                          <p className="text-[11px] text-[#475569]">Log artifacts are purged every 30 days automatically</p>
+                       </div>
+                    </div>
+                    <button className="text-[10px] font-bold text-[#6366f1] uppercase tracking-widest hover:underline">Change</button>
+                 </div>
+
+                 <div className="flex items-center justify-between p-4 bg-[#ef444405] border border-[#ef444415] rounded-xl group hover:border-[#ef444430] transition-all">
+                    <div className="flex items-center gap-4">
+                       <div className="p-3 rounded-lg bg-[#ef444410] text-[#ef4444]">
+                          <Trash2 size={20} />
+                       </div>
+                       <div className="space-y-0.5">
+                          <p className="text-xs font-bold text-[#ef4444]">Flush Alert Database</p>
+                          <p className="text-[11px] text-[#475569]">Destructive action: removes all historical security records</p>
+                       </div>
+                    </div>
+                    <button className="h-8 px-4 bg-[#ef4444]/10 text-[#ef4444] text-[10px] font-bold uppercase rounded-lg opacity-0 group-hover:opacity-100 transition-opacity border border-[#ef444420]">Clear Logs</button>
+                 </div>
+              </div>
+           </Card>
         </div>
-      )}
 
-      <form onSubmit={handleSave} className="space-y-6">
-        {/* Threat Response Configuration */}
-        <section className="glass-card overflow-hidden">
-          <div className="p-4 bg-white/5 border-b border-border flex items-center gap-2">
-            <Shield className="h-4 w-4 text-cyan-primary" />
-            <h2 className="text-sm font-bold uppercase tracking-widest text-gray-300">Automated Threat Response</h2>
-          </div>
-          <div className="p-6 space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-white">Auto-Blocking Engine</h3>
-                <p className="text-xs text-gray-400 max-w-sm">Automatically execute IP-tables DROP commands for verified threats.</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                    type="checkbox" 
-                    checked={settings.auto_block_enabled}
-                    onChange={(e) => setSettings({...settings, auto_block_enabled: e.target.checked})}
-                    className="sr-only peer" 
-                />
-                <div className="w-11 h-6 bg-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-primary shadow-inner"></div>
-              </label>
-            </div>
-
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 transition-opacity ${!settings.auto_block_enabled && 'opacity-30 pointer-events-none'}`}>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-bold text-gray-400">Strike Threshold</label>
-                    <span className="text-cyan-primary font-mono font-bold text-lg">{settings.strike_threshold} Alerts</span>
-                </div>
-                <input 
-                    type="range" 
-                    min="1" max="20" 
-                    value={settings.strike_threshold}
-                    onChange={(e) => setSettings({...settings, strike_threshold: parseInt(e.target.value)})}
-                    className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-cyan-primary"
-                />
-                <p className="text-[10px] text-gray-600">Number of High/Critical alerts before an IP is blocked.</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-bold text-gray-400">Detection Window</label>
-                    <span className="text-cyan-primary font-mono font-bold text-lg">{settings.window_minutes} Minutes</span>
-                </div>
-                <input 
-                    type="range" 
-                    min="1" max="60" 
-                    value={settings.window_minutes}
-                    onChange={(e) => setSettings({...settings, window_minutes: parseInt(e.target.value)})}
-                    className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-cyan-primary"
-                />
-                <p className="text-[10px] text-gray-600">Rolling timeframe for counting strikes per source IP.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Notifications */}
-        <section className="glass-card overflow-hidden">
-          <div className="p-4 bg-white/5 border-b border-border flex items-center gap-2">
-            <Mail className="h-4 w-4 text-warning" />
-            <h2 className="text-sm font-bold uppercase tracking-widest text-gray-300">Global Notifications</h2>
-          </div>
-          <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-white">Email Alerts</h3>
-                <p className="text-xs text-gray-400">Receive critical security summaries and block reports.</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                    type="checkbox" 
-                    checked={settings.email_notifications}
-                    onChange={(e) => setSettings({...settings, email_notifications: e.target.checked})}
-                    className="sr-only peer" 
-                />
-                <div className="w-11 h-6 bg-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-warning shadow-inner"></div>
-              </label>
-            </div>
-
-            <div className={`space-y-2 transition-opacity ${!settings.email_notifications && 'opacity-30 pointer-events-none'}`}>
-                <label className="text-xs font-bold text-gray-400 ml-1">Destination Address</label>
-                <input 
-                    type="email" 
-                    placeholder="security-ops@enterprise.com"
-                    value={settings.alert_email}
-                    onChange={(e) => setSettings({...settings, alert_email: e.target.value})}
-                    className="w-full bg-border/20 border border-border text-white px-4 py-3 rounded-xl focus:outline-none focus:border-warning transition-all text-sm font-mono"
-                />
-            </div>
-          </div>
-        </section>
-
-        {/* AI Explanation Engine */}
-        <section className="glass-card overflow-hidden">
-          <div className="p-4 bg-white/5 border-b border-border flex items-center gap-2">
-            <Zap className="h-4 w-4 text-purple-500" />
-            <h2 className="text-sm font-bold uppercase tracking-widest text-gray-300">AI Explanation Engine</h2>
-          </div>
-          <div className="p-6 space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-white">Cloud AI Analysis</h3>
-                <p className="text-xs text-gray-400 max-w-sm">Use Claude Haiku to generate plain-English summaries for security alerts.</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                    type="checkbox" 
-                    checked={settings.llm_enabled}
-                    onChange={(e) => setSettings({...settings, llm_enabled: e.target.checked})}
-                    className="sr-only peer" 
-                />
-                <div className="w-11 h-6 bg-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 shadow-inner"></div>
-              </label>
-            </div>
-
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 transition-opacity ${!settings.llm_enabled && 'opacity-30 pointer-events-none'}`}>
-              <div className="space-y-4">
-                <label className="text-sm font-bold text-gray-400">Response Threshold</label>
-                <select 
-                    value={settings.llm_min_severity}
-                    onChange={(e) => setSettings({...settings, llm_min_severity: e.target.value})}
-                    className="w-full bg-border/20 border border-border text-white px-4 py-2.5 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
-                >
-                    <option value="medium">Medium +</option>
-                    <option value="high">High +</option>
-                    <option value="critical">Critical Only</option>
-                </select>
-                <p className="text-[10px] text-gray-600 italic">Lowering this will increase API usage and potentially costs.</p>
-              </div>
-
-              <div className="space-y-2">
-                 <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-black/20 border border-white/5">
-                    <div className="flex justify-between text-[10px] font-bold">
-                        <span className="text-gray-500 uppercase">Rate Limit</span>
-                        <span className="text-purple-500">20 REQ / MIN</span>
+        {/* Right Column: AI & Metadata */}
+        <div className="lg:col-span-5 space-y-8">
+           <Card 
+             title="LLM Cognitive Analysis" 
+             subtitle="Claude 3.5 Haiku Integration" 
+             icon={BrainCircuit}
+             className="border-[#6366f120] shadow-glow"
+           >
+              <div className="space-y-8 py-4">
+                 <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                       <p className="text-sm font-bold text-[#f8fafc]">Explain Potential Incursions</p>
+                       <p className="text-[11px] text-[#94a3b8]">Convert complex telemetry into human-readable intel</p>
                     </div>
-                    <div className="flex justify-between text-[10px] font-bold">
-                        <span className="text-gray-500 uppercase">Provider</span>
-                        <span className="text-purple-500">CLAUDE HAIKU</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={config.llm_enabled}
+                        onChange={(e) => setConfig({...config, llm_enabled: e.target.checked})}
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-[#1a1a24] border border-[#2a2a3a] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-[#475569] peer-checked:after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#6366f1] peer-checked:border-[#6366f130]"></div>
+                    </label>
+                 </div>
+
+                 <div className="space-y-3">
+                    <p className="text-xs font-bold text-[#475569] uppercase tracking-widest pl-1">Threshold Activation</p>
+                    <select 
+                      className="w-full bg-[#0a0a0f] border border-[#2a2a3a] text-[#f8fafc] h-11 px-4 rounded-[12px] text-sm focus:border-[#6366f1] outline-none"
+                      value={config.llm_min_severity}
+                      onChange={(e) => setConfig({...config, llm_min_severity: e.target.value})}
+                    >
+                       <option value="critical">Critical Threats Only (Fastest)</option>
+                       <option value="high">High + Critical (Recommended)</option>
+                       <option value="medium">Medium and Above (Comprehensive)</option>
+                       <option value="low">Examine All Traffic (High API Usage)</option>
+                    </select>
+                 </div>
+
+                 <div className="p-5 bg-[#6366f110] border border-[#6366f120] rounded-xl space-y-4">
+                    <div className="flex items-center gap-3">
+                       <Zap size={18} className="text-[#6366f1]" />
+                       <span className="text-xs font-bold text-[#f8fafc]">Active Intelligence Model</span>
                     </div>
-                    <div className="flex justify-between text-[10px] font-bold">
-                        <span className="text-gray-500 uppercase">Mode</span>
-                        <span className="text-purple-500">ASYNCHRONOUS</span>
+                    <div className="space-y-2">
+                       <div className="flex justify-between text-[11px]">
+                          <span className="text-[#475569]">Model ID:</span>
+                          <span className="text-[#f8fafc] font-mono">claude-3-5-haiku-20241022</span>
+                       </div>
+                       <div className="flex justify-between text-[11px]">
+                          <span className="text-[#475569]">Latent Response Time:</span>
+                          <span className="text-[#10b981]">~1.4s</span>
+                       </div>
                     </div>
                  </div>
               </div>
-            </div>
-          </div>
-        </section>
+           </Card>
 
-        {/* System Info */}
-        <div className="flex items-start gap-3 p-4 bg-cyan-primary/5 border border-cyan-primary/20 rounded-xl">
-            <Info className="h-5 w-5 text-cyan-primary flex-shrink-0 mt-0.5" />
-            <div className="space-y-1">
-                <p className="text-xs font-medium text-cyan-primary/80 leading-relaxed italic">
-                    Changes made here update the central Supabase configuration. The Raspberry Pi systemd services will automatically sync new thresholds within their next processing cycle.
-                </p>
-                <div className="flex items-center gap-2 text-[10px] text-gray-600 font-bold uppercase tracking-widest">
-                    <Database className="h-3 w-3" />
-                    <span>Central Config Table Link: system_config [ID: settings]</span>
-                </div>
-            </div>
+           <Card title="Environment Hardware" icon={Cpu}>
+              <div className="space-y-4 pt-2">
+                 {[
+                   { icon: Clock, label: 'IDS Runtime', value: '14 Days, 22 Hours' },
+                   { icon: Layers, label: 'Memory Pressure', value: '42%' },
+                   { icon: Lock, label: 'Traffic Isolation', value: 'Level 4 (Promisc)' }
+                 ].map((stat, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-[#111118] border border-[#2a2a3a] rounded-lg">
+                       <div className="flex items-center gap-3">
+                          <stat.icon size={14} className="text-[#475569]" />
+                          <span className="text-xs text-[#94a3b8]">{stat.label}</span>
+                       </div>
+                       <span className="text-xs font-bold font-mono text-[#f8fafc]">{stat.value}</span>
+                    </div>
+                 ))}
+              </div>
+           </Card>
         </div>
+      </div>
 
-        <div className="flex justify-end pt-4">
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex items-center gap-2 px-8 py-4 bg-cyan-primary hover:bg-cyan-secondary text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-          >
-            {saving ? (
-                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-                <Save className="h-4 w-4" />
-            )}
-            Save Configuration
-          </button>
-        </div>
-      </form>
+      {/* Floating Status Notification */}
+      {saveStatus && (
+         <div className="fixed bottom-10 right-10 bg-[#10b981] text-white px-6 py-4 rounded-2xl shadow-elevated flex items-center gap-4 animate-slide-up z-[100]">
+            <CheckCircle2 size={24} />
+            <span className="font-bold text-sm">{saveStatus}</span>
+         </div>
+      )}
     </div>
   );
 };

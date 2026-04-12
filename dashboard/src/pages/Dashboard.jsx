@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { 
-  ShieldAlert, 
+  Shield, 
   Activity, 
-  Target, 
-  Globe, 
+  Ban, 
+  Zap, 
   TrendingUp, 
-  AlertCircle,
-  Zap
+  PieChart as PieIcon,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
-  LineChart, Line, PieChart, Pie, Cell 
+  PieChart, Pie, Cell 
 } from 'recharts';
-import { format } from 'date-fns';
+import StatCard from '../components/StatCard';
+import Card from '../components/Card';
+import AlertRow from '../components/AlertRow';
+import EmptyState from '../components/EmptyState';
 
 const Dashboard = () => {
   const [alerts, setAlerts] = useState([]);
@@ -21,19 +24,18 @@ const Dashboard = () => {
     total: 0,
     activeThreats: 0,
     blockedCount: 0,
-    mostAttackedPort: '80',
     explanationCount: 0
   });
+  const [expandedRow, setExpandedRow] = useState(null);
 
   useEffect(() => {
     fetchAlerts();
     fetchStats();
 
-    // Real-time subscription
     const channel = supabase
-      .channel('live-alerts')
+      .channel('live-alerts-v2')
       .on('postgres_changes', { event: 'INSERT', table: 'alerts' }, (payload) => {
-        setAlerts(prev => [payload.new, ...prev].slice(0, 50));
+        setAlerts(prev => [payload.new, ...prev].slice(0, 10));
         updateRealtimeStats(payload.new);
       })
       .subscribe();
@@ -46,24 +48,22 @@ const Dashboard = () => {
       .from('alerts')
       .select('*')
       .order('timestamp', { ascending: false })
-      .limit(50);
+      .limit(10);
     if (data) setAlerts(data);
   };
 
   const fetchStats = async () => {
-    const { data: alertsData } = await supabase.from('alerts').select('severity, dest_port');
-    const { count: blockedCount } = await supabase.from('blocked_ips').select('*', { count: 'exact' });
+    const { data: alertsData } = await supabase.from('alerts').select('severity');
+    const { count: blockedCount } = await supabase.from('blocked_ips').select('*', { count: 'exact', head: true });
     const { count: explanationCount } = await supabase.from('alerts').select('*', { count: 'exact', head: true }).eq('explanation_status', 'generated');
 
     if (alertsData) {
-        // Simple logic for stats
-        setStats(prev => ({
-            ...prev,
+        setStats({
             total: alertsData.length,
             blockedCount: blockedCount || 0,
             explanationCount: explanationCount || 0,
             activeThreats: alertsData.filter(a => a.severity === 'critical' || a.severity === 'high').length
-        }));
+        });
     }
   };
 
@@ -75,167 +75,135 @@ const Dashboard = () => {
     }));
   };
 
-  // Chart Data preparation
   const chartData = [
-    { name: 'RECON', value: alerts.filter(a => a.attack_type === 'RECONNAISSANCE').length },
-    { name: 'DOS', value: alerts.filter(a => a.attack_type === 'DOS').length },
-    { name: 'EXPLOIT', value: alerts.filter(a => a.attack_type === 'EXPLOIT').length },
-    { name: 'MALWARE', value: alerts.filter(a => a.attack_type === 'MALWARE').length },
+    { name: 'RECON', value: alerts.filter(a => a.attack_type === 'RECONNAISSANCE').length, color: '#6366f1' },
+    { name: 'DOS', value: alerts.filter(a => a.attack_type === 'DOS').length, color: '#ef4444' },
+    { name: 'EXPLOIT', value: alerts.filter(a => a.attack_type === 'EXPLOIT').length, color: '#f59e0b' },
+    { name: 'MALWARE', value: alerts.filter(a => a.attack_type === 'MALWARE').length, color: '#8b5cf6' },
   ];
 
-  const SEVERITY_COLORS = { 
-    critical: '#ef4444', 
-    high: '#f59e0b', 
-    medium: '#facc15', 
-    low: '#9ca3af' 
-  };
-
-  const ATTACK_COLORS = {
-    RECONNAISSANCE: "#06b6d4",   // cyan
-    DOS: "#ef4444",              // red  
-    EXPLOIT: "#f59e0b",          // amber
-    MALWARE: "#8b5cf6",          // purple
-    UNKNOWN: "#6b7280",          // gray
-    "SLOW SCAN": "#f97316",      // orange
-    "DNS EXFIL": "#ec4899",      // pink
-    "ARP SPOOF": "#14b8a6",      // teal
-    "WEB ATTACK": "#84cc16",     // lime
-  };
+  const pieData = [
+    { name: 'Critical', value: alerts.filter(a => a.severity === 'critical').length, color: '#ef4444' },
+    { name: 'High', value: alerts.filter(a => a.severity === 'high').length, color: '#f97316' },
+    { name: 'Medium', value: alerts.filter(a => a.severity === 'medium').length, color: '#f59e0b' },
+    { name: 'Low', value: alerts.filter(a => a.severity === 'low').length, color: '#94a3b8' },
+  ].filter(d => d.value > 0);
 
   return (
-    <div className="space-y-6">
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Alerts', value: stats.total, icon: ShieldAlert, color: 'text-cyan-primary', bg: 'bg-cyan-primary/10' },
-          { label: 'Active Threats', value: stats.activeThreats, icon: Activity, color: 'text-danger', bg: 'bg-danger/10' },
-          { label: 'Blocked IPs', value: stats.blockedCount, icon: Target, color: 'text-warning', bg: 'bg-warning/10' },
-          { label: 'AI Insights', value: stats.explanationCount, icon: Zap, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-        ].map((stat, i) => (
-          <div key={i} className="glass-card p-6 flex items-center justify-between group hover:border-white/20 transition-all">
-            <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">{stat.label}</p>
-              <h3 className="text-3xl font-bold font-mono text-white">{stat.value}</h3>
-            </div>
-            <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl group-hover:scale-110 transition-transform`}>
-              <stat.icon className="h-6 w-6" />
-            </div>
-          </div>
-        ))}
+    <div className="space-y-8 animate-fade">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard label="Total Alerts" value={stats.total} icon={Shield} color="#94a3b8" />
+        <StatCard label="Active Threats" value={stats.activeThreats} icon={Activity} color="#ef4444" trend="+3 today" />
+        <StatCard label="Blocked IPs" value={stats.blockedCount} icon={Ban} color="#f97316" />
+        <StatCard label="AI Insights" value={stats.explanationCount} icon={Zap} color="#6366f1" />
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-cyan-primary" />
-              Alert Frequency (Last 50 Events)
-            </h2>
-          </div>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <XAxis dataKey="name" stroke="#4b5563" />
-                <YAxis stroke="#4b5563" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '8px' }}
-                  itemStyle={{ color: '#06b6d4' }}
-                />
-                <Bar dataKey="value" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <Card title="Threat Classification" subtitle="Alerts by type (Last 50 events)" icon={TrendingUp} className="lg:col-span-8">
+           <div className="h-[320px] w-full pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={chartData}>
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#475569" 
+                      fontSize={11} 
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      stroke="#475569" 
+                      fontSize={11} 
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip 
+                      cursor={{fill: 'rgba(255,255,255,0.03)'}}
+                      contentStyle={{ backgroundColor: '#111118', border: '1px solid #2a2a3a', borderRadius: '10px' }}
+                      itemStyle={{ fontSize: '12px' }}
+                    />
+                    <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={40} />
+                 </BarChart>
+              </ResponsiveContainer>
+           </div>
+        </Card>
 
-        <div className="glass-card p-6">
-          <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-warning" />
-            Severity Dist.
-          </h2>
-          <div className="h-[300px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'Critical', value: alerts.filter(a => a.severity === 'critical').length },
-                    { name: 'High', value: alerts.filter(a => a.severity === 'high').length },
-                    { name: 'Med', value: alerts.filter(a => a.severity === 'medium').length },
-                    { name: 'Low', value: alerts.filter(a => a.severity === 'low').length },
-                  ]}
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  <Cell fill={SEVERITY_COLORS.critical} />
-                  <Cell fill={SEVERITY_COLORS.high} />
-                  <Cell fill={SEVERITY_COLORS.medium} />
-                  <Cell fill={SEVERITY_COLORS.low} />
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '8px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <Card title="Risk Topology" subtitle="Severity distribution" icon={PieIcon} className="lg:col-span-4">
+           <div className="h-[320px] w-full relative flex flex-col items-center justify-center">
+              <ResponsiveContainer width="100%" height={240}>
+                 <PieChart>
+                    <Pie
+                      data={pieData}
+                      innerRadius={60}
+                      outerRadius={85}
+                      paddingAngle={8}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                       contentStyle={{ backgroundColor: '#111118', border: '1px solid #2a2a3a', borderRadius: '10px' }}
+                    />
+                 </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4">
+                 {pieData.map(d => (
+                    <div key={d.name} className="flex items-center gap-2">
+                       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: d.color }} />
+                       <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">{d.name}</span>
+                    </div>
+                 ))}
+              </div>
+           </div>
+        </Card>
       </div>
 
-      {/* Live Alerts Table */}
-      <div className="glass-card overflow-hidden">
-        <div className="p-6 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Zap className="h-5 w-5 text-cyan-primary animate-pulse" />
-            Live Threat Stream
-          </h2>
-          <span className="text-[10px] bg-white/5 border border-border px-2 py-1 rounded text-gray-500 uppercase tracking-widest font-bold">
-            Real-time Enabled
-          </span>
-        </div>
-        <div className="overflow-x-auto">
+      {/* Live Stream Table */}
+      <Card 
+        title="Live Threat Stream" 
+        icon={Zap} 
+        action={
+           <div className="flex items-center gap-2 px-2 py-1 rounded bg-[#10b98110] border border-[#10b98120]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#10b981] animate-pulse" />
+              <span className="text-[10px] font-bold text-[#10b981] tracking-widest uppercase">Real-Time Active</span>
+           </div>
+        }
+      >
+        <div className="overflow-x-auto min-h-[400px]">
           <table className="soc-table">
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Type</th>
-                <th>Signature</th>
-                <th>Src IP</th>
-                <th>Dest IP</th>
-                <th>Severity</th>
-                <th>Status</th>
+                <th style={{ width: 100 }}>Time</th>
+                <th style={{ width: 120 }}>Incursion</th>
+                <th>Threat Signature</th>
+                <th style={{ width: 140 }}>Origin IP</th>
+                <th style={{ width: 140 }}>Location</th>
+                <th style={{ width: 64 }}></th>
               </tr>
             </thead>
             <tbody>
               {alerts.map((alert) => (
-                <tr key={alert.id} className="animate-in fade-in slide-in-from-top-4 duration-500">
-                  <td className="text-gray-400">{format(new Date(alert.timestamp), 'HH:mm:ss')}</td>
-                  <td>
-                    <span className="text-xs font-bold text-gray-300">{alert.attack_type}</span>
-                  </td>
-                  <td className="max-w-xs truncate font-medium">{alert.signature}</td>
-                  <td className="text-cyan-primary">{alert.src_ip}</td>
-                  <td>{alert.dest_ip}</td>
-                  <td>
-                    <span className={`badge badge-${(alert.attack_type?.includes('SLOW SCAN')) ? 'high' : alert.severity}`}>
-                      {alert.severity}
-                    </span>
-                  </td>
-                  <td>
-                    {alert.count > 1 ? (
-                        <span className="text-[10px] bg-cyan-primary/20 text-cyan-primary px-1.5 py-0.5 rounded font-bold">
-                            X{alert.count}
-                        </span>
-                    ) : (
-                        <span className="h-2 w-2 rounded-full bg-success inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                    )}
-                  </td>
-                </tr>
+                <AlertRow 
+                  key={alert.id} 
+                  alert={alert} 
+                  isExpanded={expandedRow === alert.id}
+                  onToggle={() => setExpandedRow(expandedRow === alert.id ? null : alert.id)}
+                />
               ))}
             </tbody>
           </table>
+          {alerts.length === 0 && (
+             <EmptyState 
+               icon={ShieldCheck} 
+               title="Secure Perimeter" 
+               message="No active threats detected on the network. All systems operational." 
+             />
+          )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
