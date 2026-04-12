@@ -16,6 +16,7 @@ const AlertLog = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedRow, setExpandedRow] = useState(null);
   const pageSize = 50;
 
   useEffect(() => {
@@ -81,6 +82,47 @@ const AlertLog = () => {
     document.body.removeChild(link);
   };
 
+  const renderExplanation = (explanationJson) => {
+    let parsed;
+    try { parsed = JSON.parse(explanationJson); }
+    catch { return <div style={{color:'#ef4444'}}>Parse error</div>; }
+    
+    const threatColor = {
+      'Low Risk': '#10b981',
+      'Moderate Risk': '#f59e0b', 
+      'High Risk': '#f97316',
+      'Critical Threat': '#ef4444'
+    }[parsed.threat_level] || '#6b7280';
+  
+    return (
+      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        <span style={{
+          display:'inline-block', padding:'2px 10px',
+          borderRadius:4, background: threatColor+'22',
+          color: threatColor, border:`1px solid ${threatColor}`,
+          fontSize:12, fontWeight:'bold', width:'fit-content'
+        }}>
+          {parsed.threat_level}
+        </span>
+        {[
+          { label:'🔍 What happened', value: parsed.what_happened },
+          { label:'⚠️ Why it matters', value: parsed.why_it_matters },
+          { label:'✅ Action', value: parsed.action }
+        ].map(({ label, value }) => (
+          <div key={label}>
+            <div style={{ color:'#9ca3af', fontSize:11, 
+                          fontWeight:'bold', marginBottom:2 }}>
+              {label}
+            </div>
+            <div style={{ color:'#e5e7eb', fontSize:13, lineHeight:1.5 }}>
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -136,7 +178,8 @@ const AlertLog = () => {
                    <td colSpan="7" className="text-center py-20 text-gray-600">Retrieving alert database...</td>
                 </tr>
               ) : alerts.map((alert) => (
-                <tr key={alert.id}>
+                <React.Fragment key={alert.id}>
+                  <tr>
                   <td className="text-gray-400 text-xs">
                     {format(new Date(alert.timestamp), 'yyyy-MM-dd HH:mm:ss')}
                   </td>
@@ -223,39 +266,8 @@ const AlertLog = () => {
                                 <p className="text-xs text-danger/50 italic text-center py-6">Failed to generate AI insight</p>
                             )}
 
-                            {alert.explanation_status === 'generated' && alert.explanation && (() => {
-                                let parsed;
-                                try { parsed = JSON.parse(alert.explanation); } 
-                                catch { return <div className="text-danger">Parse error</div>; }
-                                
-                                const threatColor = {
-                                  'Low Risk': 'text-success border-success bg-success/10',
-                                  'Moderate Risk': 'text-warning border-warning bg-warning/10',
-                                  'High Risk': 'text-orange-500 border-orange-500 bg-orange-500/10',
-                                  'Critical Threat': 'text-danger border-danger bg-danger/10'
-                                }[parsed.threat_level] || 'text-gray-500 border-gray-500';
-
-                                return (
-                                  <div className="space-y-4">
-                                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${threatColor}`}>
-                                        {parsed.threat_level?.toUpperCase()}
-                                     </span>
-
-                                     <div className="space-y-3">
-                                        {[
-                                          { label: '🔍 Situation', value: parsed.what_happened },
-                                          { label: '⚠️ Exposure', value: parsed.why_it_matters },
-                                          { label: '✅ Guidance', value: parsed.action }
-                                        ].map(({ label, value }) => (
-                                          <div key={label}>
-                                            <p className="text-[10px] font-bold text-gray-600 mb-0.5">{label}</p>
-                                            <p className="text-[13px] text-gray-300 leading-relaxed">{value}</p>
-                                          </div>
-                                        ))}
-                                     </div>
-                                  </div>
-                                );
-                            })()}
+                            {alert.explanation_status === 'generated' && 
+                              renderExplanation(alert.explanation)}
                           </div>
                         </div>
                       </div>
