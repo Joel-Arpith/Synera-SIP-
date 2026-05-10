@@ -258,6 +258,22 @@ app.post('/api/test-alert', async (req, res) => {
             category: 'Malware Command and Control Activity Detected',
             severity: '1',
         },
+        dos: {
+            src_ip: '91.108.4.55', src_port: 53,
+            dest_ip: '192.168.0.103', dest_port: 80,
+            proto: 'UDP',
+            signature: 'ET DOS Possible NTP DDoS Inbound Frequent Un-Authed MON_LIST Requests',
+            category: 'Denial of Service Attack',
+            severity: '1',
+        },
+        recon: {
+            src_ip: '80.94.92.14', src_port: 0,
+            dest_ip: '192.168.0.103', dest_port: 0,
+            proto: 'TCP',
+            signature: 'ET SCAN Potential SSH Scan',
+            category: 'Attempted Information Leak',
+            severity: '2',
+        },
     };
 
     const type     = req.body.type || 'portscan';
