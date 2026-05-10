@@ -306,4 +306,38 @@ app.post('/api/unblock-ip', async (req, res) => {
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`[CyberIDS] Listening on port ${port}`);
+    startRealtimeListener();
 });
+
+// ─── Realtime bridge ─────────────────────────────────────────
+// Frontend writes to Supabase; Pi reacts here via Realtime.
+// This lets the dashboard trigger iptables without needing direct Pi access.
+function startRealtimeListener() {
+    supabase
+        .channel('block-commands')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blocked_ips' }, async (payload) => {
+            const { ip, reason, alert_count } = payload.new;
+            if (!ip || !isValidIP(ip)) return;
+            if (isPrivateIP(ip)) {
+                console.log(`[REALTIME] Skipping private IP block: ${ip}`);
+                return;
+            }
+            console.log(`[REALTIME] Block command received for ${ip}`);
+            exec('sudo iptables -A INPUT -s ' + ip + ' -j DROP', err => {
+                if (err) console.error(`[REALTIME] iptables block failed for ${ip}: ${err.message}`);
+                else console.log(`[REALTIME] Blocked ${ip} via iptables`);
+            });
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'blocked_ips' }, async (payload) => {
+            const { ip, unblocked } = payload.new;
+            if (!unblocked || !ip || !isValidIP(ip)) return;
+            console.log(`[REALTIME] Unblock command received for ${ip}`);
+            exec('sudo iptables -D INPUT -s ' + ip + ' -j DROP', err => {
+                if (err) console.error(`[REALTIME] iptables unblock failed for ${ip}: ${err.message}`);
+                else console.log(`[REALTIME] Unblocked ${ip} via iptables`);
+            });
+        })
+        .subscribe(status => {
+            console.log(`[REALTIME] Block command channel: ${status}`);
+        });
+}

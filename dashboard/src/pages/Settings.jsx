@@ -40,11 +40,11 @@ const Settings = () => {
   const handleSave = async () => {
     setSaving(true);
     const { error } = await supabase
-      .from('config')
+      .from('system_config')
       .upsert({ id: config.id || 1, ...config });
-    
+
     setSaving(false);
-    setSaveStatus(error ? 'Error saving configuration' : 'Policy updated successfully');
+    setSaveStatus(error ? 'Error saving configuration' : 'Saved');
     setTimeout(() => setSaveStatus(null), 3000);
   };
 
@@ -60,10 +60,11 @@ const Settings = () => {
           <p className="text-[#94a3b8] text-sm">Fine-tune detection sensitivity and automated response logic</p>
         </div>
         
-        <button 
+        <button
           onClick={handleSave}
           disabled={saving}
-          className="h-11 px-6 bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold rounded-[12px] flex items-center gap-3 shadow-lg shadow-[#6366f120] transition-all active:scale-[0.98] disabled:opacity-50"
+          className="h-9 px-5 text-[13px] font-semibold rounded-[var(--radius-md)] flex items-center gap-2 transition-opacity disabled:opacity-50"
+          style={{ background: 'var(--accent)', color: '#fff' }}
         >
           {saving ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
           {saving ? 'Synchronizing...' : 'Commit Changes'}
@@ -254,10 +255,13 @@ const Settings = () => {
 
       {/* Floating Status Notification */}
       {saveStatus && (
-         <div className="fixed bottom-10 right-10 bg-[#10b981] text-white px-6 py-4 rounded-2xl shadow-elevated flex items-center gap-4 animate-slide-up z-[100]">
-            <CheckCircle2 size={24} />
-            <span className="font-bold text-sm">{saveStatus}</span>
-         </div>
+        <div
+          className="fixed bottom-8 right-8 px-5 py-3 rounded-[var(--radius-lg)] flex items-center gap-3 animate-slide-up z-[100]"
+          style={{ background: saveStatus === 'Saved' ? 'var(--success)' : 'var(--danger)', color: '#fff', boxShadow: 'var(--shadow-elevated)' }}
+        >
+          <CheckCircle2 size={16} />
+          <span className="text-[13px] font-semibold">{saveStatus}</span>
+        </div>
       )}
     </div>
   );

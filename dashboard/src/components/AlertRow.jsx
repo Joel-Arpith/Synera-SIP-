@@ -1,7 +1,8 @@
-import React from 'react';
-import { ChevronDown, Globe, Target, Activity } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown, Globe, Target, Activity, Ban, CheckCircle2 } from 'lucide-react';
 import Badge from './Badge';
 import { format } from 'date-fns';
+import { supabase } from '../supabase';
 
 const renderExplanation = (raw) => {
   let parsed;
@@ -34,6 +35,63 @@ const renderExplanation = (raw) => {
         </div>
       ))}
     </div>
+  );
+};
+
+const BlockButton = ({ ip }) => {
+  const [state, setState] = useState('idle'); // idle | confirm | blocking | done | error
+
+  const handleBlock = async () => {
+    setState('blocking');
+    const { error } = await supabase.from('blocked_ips').upsert({
+      ip,
+      reason: 'Blocked from alert log',
+      timestamp: new Date().toISOString(),
+      alert_count: 1,
+      unblocked: false,
+    });
+    setState(error ? 'error' : 'done');
+  };
+
+  if (state === 'done') return (
+    <div className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--success)' }}>
+      <CheckCircle2 size={13} /> Blocked
+    </div>
+  );
+
+  if (state === 'error') return (
+    <span className="text-[11px]" style={{ color: 'var(--danger)' }}>Block failed</span>
+  );
+
+  if (state === 'confirm') return (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={handleBlock}
+        className="text-[11px] font-semibold px-3 py-1 rounded-[var(--radius-sm)]"
+        style={{ background: 'var(--danger)', color: '#fff' }}
+      >
+        Confirm
+      </button>
+      <button
+        onClick={() => setState('idle')}
+        className="text-[11px] px-3 py-1 rounded-[var(--radius-sm)]"
+        style={{ background: 'var(--bg-elevated)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
+      >
+        Cancel
+      </button>
+    </div>
+  );
+
+  return (
+    <button
+      onClick={() => setState('confirm')}
+      className="flex items-center gap-1.5 text-[11px] font-medium px-3 py-1 rounded-[var(--radius-sm)] transition-colors"
+      style={{ color: 'var(--text-3)', border: '1px solid var(--border)' }}
+      onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.borderColor = 'var(--danger)'; e.currentTarget.style.background = 'var(--danger-dim)'; }}
+      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'transparent'; }}
+    >
+      <Ban size={12} /> Block IP
+    </button>
   );
 };
 
@@ -112,6 +170,9 @@ const AlertRow = ({ alert, isExpanded, onToggle }) => (
                     <span className="font-medium truncate" style={{ color: 'var(--text-1)' }}>{v}</span>
                   </div>
                 ))}
+              </div>
+              <div className="pt-1">
+                <BlockButton ip={alert.src_ip} />
               </div>
             </div>
 
