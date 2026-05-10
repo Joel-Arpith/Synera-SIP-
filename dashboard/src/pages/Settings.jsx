@@ -19,9 +19,9 @@ import Card from '../components/Card';
 
 const Settings = () => {
   const [config, setConfig] = useState({
-    auto_block: true,
-    strike_threshold: 3,
-    time_window_minutes: 60,
+    auto_block_enabled: true,
+    strike_threshold: 5,
+    window_minutes: 5,
     llm_enabled: true,
     llm_min_severity: 'high'
   });
@@ -39,9 +39,11 @@ const Settings = () => {
 
   const handleSave = async () => {
     setSaving(true);
+    const { auto_block_enabled, strike_threshold, window_minutes, llm_enabled, llm_min_severity } = config;
     const { error } = await supabase
       .from('system_config')
-      .upsert({ id: config.id || 1, ...config });
+      .update({ auto_block_enabled, strike_threshold, window_minutes, llm_enabled, llm_min_severity })
+      .eq('id', 'settings');
 
     setSaving(false);
     setSaveStatus(error ? 'Error saving configuration' : 'Saved');
@@ -86,11 +88,11 @@ const Settings = () => {
                        <p className="text-xs text-[#94a3b8]">Immediately drop traffic from flagged IP addresses</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={config.auto_block}
-                        onChange={(e) => setConfig({...config, auto_block: e.target.checked})}
-                        className="sr-only peer" 
+                      <input
+                        type="checkbox"
+                        checked={config.auto_block_enabled}
+                        onChange={(e) => setConfig({...config, auto_block_enabled: e.target.checked})}
+                        className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-[#1a1a24] border border-[#2a2a3a] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-[#475569] peer-checked:after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#6366f1] peer-checked:border-[#6366f130]"></div>
                     </label>
@@ -106,10 +108,10 @@ const Settings = () => {
                           {config.strike_threshold} Event(s)
                        </span>
                     </div>
-                    <input 
-                      type="range" 
-                      min="1" 
-                      max="10" 
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
                       value={config.strike_threshold}
                       onChange={(e) => setConfig({...config, strike_threshold: parseInt(e.target.value)})}
                       className="w-full h-1.5 bg-[#1a1a24] rounded-lg appearance-none cursor-pointer accent-[#6366f1]"
@@ -128,16 +130,16 @@ const Settings = () => {
                           <p className="text-xs text-[#94a3b8]">Rolling window for event correlation</p>
                        </div>
                        <span className="font-mono text-lg font-bold text-[#94a3b8] bg-[#1a1a24] px-3 py-1 rounded-lg border border-[#2a2a3a]">
-                          {config.time_window_minutes} Minutes
+                          {config.window_minutes} Minutes
                        </span>
                     </div>
-                    <input 
-                      type="range" 
-                      min="5" 
-                      max="120" 
+                    <input
+                      type="range"
+                      min="5"
+                      max="120"
                       step="5"
-                      value={config.time_window_minutes}
-                      onChange={(e) => setConfig({...config, time_window_minutes: parseInt(e.target.value)})}
+                      value={config.window_minutes}
+                      onChange={(e) => setConfig({...config, window_minutes: parseInt(e.target.value)})}
                       className="w-full h-1.5 bg-[#1a1a24] rounded-lg appearance-none cursor-pointer accent-[#6366f1]"
                     />
                  </div>
