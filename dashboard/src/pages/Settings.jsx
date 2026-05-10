@@ -33,7 +33,7 @@ const Settings = () => {
   }, []);
 
   const fetchConfig = async () => {
-    const { data } = await supabase.from('config').select('*').single();
+    const { data } = await supabase.from('system_config').select('*').single();
     if (data) setConfig(data);
   };
 

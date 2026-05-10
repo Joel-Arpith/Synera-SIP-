@@ -1,49 +1,61 @@
 import React, { useState, useEffect } from 'react';
 
-const StatCard = ({ value, label, icon: Icon, trend, color = "#000000" }) => {
-  const [displayValue, setDisplayValue] = useState(0);
+const StatCard = ({ value, label, icon: Icon, trend }) => {
+  const [display, setDisplay] = useState(0);
 
   useEffect(() => {
-    let start = 0;
     const end = parseInt(value);
-    if (isNaN(end)) {
-        setDisplayValue(value);
-        return;
-    }
-    if (start === end) return;
+    if (isNaN(end)) { setDisplay(value); return; }
+    if (end === 0) { setDisplay(0); return; }
 
-    let totalDuration = 1000;
-    let increment = end / (totalDuration / 16);
-    let timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setDisplayValue(end);
-        clearInterval(timer);
-      } else {
-        setDisplayValue(Math.floor(start));
-      }
+    let current = 0;
+    const step = end / (800 / 16);
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= end) { setDisplay(end); clearInterval(timer); }
+      else setDisplay(Math.floor(current));
     }, 16);
-
     return () => clearInterval(timer);
   }, [value]);
 
   return (
-    <div className="apple-card p-6 flex items-center justify-between transition-all duration-300">
-      <div className="space-y-1">
-        <p className="text-[12px] font-bold text-[#86868b] uppercase tracking-wide">{label}</p>
+    <div
+      className="flex items-start justify-between p-5 rounded-[var(--radius-lg)]"
+      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+    >
+      <div className="space-y-3">
+        <p
+          className="text-[11px] font-semibold uppercase tracking-widest"
+          style={{ color: 'var(--text-3)' }}
+        >
+          {label}
+        </p>
         <div className="flex items-baseline gap-2">
-          <h3 className="text-[28px] font-bold text-black tracking-tight">{displayValue.toLocaleString()}</h3>
+          <span
+            className="text-[28px] font-bold leading-none tracking-tight"
+            style={{ color: 'var(--text-1)' }}
+          >
+            {typeof display === 'number' ? display.toLocaleString() : display}
+          </span>
           {trend && (
-            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${trend.startsWith('+') ? 'bg-[#34c759]/10 text-[#34c759]' : 'bg-[#ff3b30]/10 text-[#ff3b30]'}`}>
+            <span
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+              style={{
+                background: trend.startsWith('+') ? 'var(--success-dim)' : 'var(--danger-dim)',
+                color:      trend.startsWith('+') ? 'var(--success)'     : 'var(--danger)',
+              }}
+            >
               {trend}
             </span>
           )}
         </div>
       </div>
-      <div 
-        className="p-3.5 rounded-2xl bg-[#f5f5f7] border border-[#d2d2d7]/20 flex items-center justify-center text-black"
+
+      <div
+        className="p-2.5 rounded-[var(--radius-md)] mt-0.5"
+        style={{ background: 'var(--bg-elevated)', color: 'var(--text-3)' }}
       >
-        <Icon size={20} strokeWidth={2.5} />
+        <Icon size={18} strokeWidth={1.75} />
       </div>
     </div>
   );

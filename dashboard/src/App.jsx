@@ -36,15 +36,12 @@ const ProtectedRoute = ({ children }) => {
   }, []);
   
   if (loading) return (
-     <div className="min-h-screen bg-[#fbfbfd] flex flex-col items-center justify-center gap-8">
-        <div className="relative">
-          <div className="h-12 w-12 border-[3px] border-black/5 border-t-black rounded-full animate-spin" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-1.5 w-1.5 bg-black rounded-full animate-pulse" />
-          </div>
-        </div>
-        <p className="text-[13px] font-semibold text-black/40 uppercase tracking-[0.2em] ml-1">Secure Intel Access</p>
-     </div>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+      <div
+        className="h-8 w-8 rounded-full border-2 border-t-transparent animate-spin"
+        style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }}
+      />
+    </div>
   );
   
   if (!session) return <Navigate to="/login" replace />;
@@ -52,11 +49,11 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const DashboardLayout = ({ children, title }) => (
-  <div className="flex min-h-screen bg-[#fbfbfd]">
+  <div className="flex min-h-screen" style={{ background: 'var(--bg-base)' }}>
     <Sidebar />
-    <div className="flex-1 transition-all duration-300 ml-64">
+    <div className="flex-1 ml-[220px]">
       <TopBar title={title} />
-      <main className="p-10 max-w-[1600px] mx-auto">
+      <main className="p-8 max-w-[1400px] mx-auto">
         {children}
       </main>
     </div>
@@ -75,35 +72,35 @@ function App() {
         {/* Protected routes */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <DashboardLayout title="Operational Overview">
+            <DashboardLayout title="Dashboard">
               <Dashboard />
             </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/alerts" element={
           <ProtectedRoute>
-            <DashboardLayout title="Security Archive">
+            <DashboardLayout title="Alert log">
               <AlertLog />
             </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/map" element={
           <ProtectedRoute>
-            <DashboardLayout title="Geo-Spatial Intelligence">
+            <DashboardLayout title="Threat map">
               <ThreatMap />
             </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/blocked" element={
           <ProtectedRoute>
-            <DashboardLayout title="Threat Quarantine">
+            <DashboardLayout title="Blocked IPs">
               <BlockedIPs />
             </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/settings" element={
           <ProtectedRoute>
-            <DashboardLayout title="System Configuration">
+            <DashboardLayout title="Settings">
               <Settings />
             </DashboardLayout>
           </ProtectedRoute>

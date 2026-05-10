@@ -1,9 +1,5 @@
 -- CyberIDS Expanded Schema
 
--- Enable Realtime for existing tables (if not already)
-ALTER PUBLICATION supabase_realtime ADD TABLE alerts;
-ALTER PUBLICATION supabase_realtime ADD TABLE blocked_ips;
-
 -- Alerts Table Expansion
 CREATE TABLE IF NOT EXISTS alerts (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -62,6 +58,10 @@ CREATE TABLE IF NOT EXISTS system_config (
 INSERT INTO system_config (id, auto_block_enabled, strike_threshold, window_minutes, llm_enabled, llm_min_severity)
 VALUES ('settings', TRUE, 5, 5, TRUE, 'high')
 ON CONFLICT (id) DO NOTHING;
+
+-- Enable Realtime (tables must exist first)
+ALTER PUBLICATION supabase_realtime ADD TABLE alerts;
+ALTER PUBLICATION supabase_realtime ADD TABLE blocked_ips;
 
 -- RLS Policies
 ALTER TABLE alerts ENABLE ROW LEVEL SECURITY;
