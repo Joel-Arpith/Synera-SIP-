@@ -104,22 +104,35 @@ function getGeo(ip) {
     };
 }
 
+const IP_REGEX = /^(\d{1,3}\.){3}\d{1,3}$|^[\da-fA-F:]+$/;
+
+function isValidIP(ip) {
+    if (!ip || !IP_REGEX.test(ip)) return false;
+    // Validate each octet for IPv4
+    if (ip.includes('.')) {
+        return ip.split('.').every(o => parseInt(o, 10) <= 255);
+    }
+    return true;
+}
+
 // --- Blocking Logic ---
 async function blockIP(ip, reason, alertCount) {
+    if (!isValidIP(ip)) {
+        console.warn(`[SKIP] Invalid IP format rejected: ${ip}`);
+        return;
+    }
     if (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('127.')) {
         console.log(`[SKIP] Internal IP ${ip} ignored for blocking.`);
         return;
     }
 
     console.log(`[ACTION] Blocking IP ${ip} for: ${reason}`);
-    
-    // Execute iptables
-    exec(`sudo iptables -A INPUT -s ${ip} -j DROP`, (err) => {
+
+    exec('sudo iptables -A INPUT -s ' + ip + ' -j DROP', (err) => {
         if (err) console.error(`[ERROR] iptables failed for ${ip}: ${err.message}`);
     });
 
-    // Log to Supabase
-    const { data: geo } = getGeo(ip);
+    const geo = getGeo(ip);
     await supabase.from('blocked_ips').upsert({
         ip,
         reason,
@@ -254,9 +267,12 @@ app.get('/api/stats', async (req, res) => {
 
 app.post('/api/unblock-ip', async (req, res) => {
     const { ip } = req.body;
+    if (!isValidIP(ip)) {
+        return res.status(400).json({ error: 'Invalid IP address' });
+    }
     console.log(`[ACTION] Unblocking IP ${ip}`);
-    
-    exec(`sudo iptables -D INPUT -s ${ip} -j DROP`, (err) => {
+
+    exec('sudo iptables -D INPUT -s ' + ip + ' -j DROP', (err) => {
         if (err) console.error(`[ERROR] iptables delete failed for ${ip}: ${err.message}`);
     });
 

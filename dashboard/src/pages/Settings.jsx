@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
-import { 
-  Settings as SettingsIcon, 
-  Ban, 
-  Zap, 
-  Save, 
-  Info, 
-  Cpu, 
+import {
+  Settings as SettingsIcon,
+  Ban,
+  Zap,
+  Save,
+  Info,
+  Cpu,
   Clock,
   Layers,
   BrainCircuit,
   Lock,
   RefreshCw,
-  Trash2
+  Trash2,
+  CheckCircle2
 } from 'lucide-react';
 import Card from '../components/Card';
 
@@ -175,9 +176,9 @@ const Settings = () => {
 
         {/* Right Column: AI & Metadata */}
         <div className="lg:col-span-5 space-y-8">
-           <Card 
-             title="LLM Cognitive Analysis" 
-             subtitle="Claude 3.5 Haiku Integration" 
+           <Card
+             title="LLM Cognitive Analysis"
+             subtitle="OpenRouter Integration"
              icon={BrainCircuit}
              className="border-[#6366f120] shadow-glow"
            >
@@ -220,7 +221,7 @@ const Settings = () => {
                     <div className="space-y-2">
                        <div className="flex justify-between text-[11px]">
                           <span className="text-[#475569]">Model ID:</span>
-                          <span className="text-[#f8fafc] font-mono">claude-3-5-haiku-20241022</span>
+                          <span className="text-[#f8fafc] font-mono">mistral-7b-instruct:free</span>
                        </div>
                        <div className="flex justify-between text-[11px]">
                           <span className="text-[#475569]">Latent Response Time:</span>

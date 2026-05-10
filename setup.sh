@@ -55,6 +55,10 @@ echo "Place it in project root as GeoLite2-City.mmdb"
 # Set Suricata permissions
 sudo chmod 644 /var/log/suricata/eve.json
 
+# Install log rotation config (daily rotate, 7-day retention, compress)
+sudo cp suricata-logrotate /etc/logrotate.d/suricata
+sudo chmod 644 /etc/logrotate.d/suricata
+
 # Configure Suricata interface
 echo "Edit /etc/suricata/suricata.yaml"
 echo "Set your network interface (eth0 or wlan0)"

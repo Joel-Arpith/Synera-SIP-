@@ -47,15 +47,17 @@ async function explainAlert(alert) {
       }
     `;
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const model = process.env.OPENROUTER_MODEL || 'mistralai/mistral-7b-instruct:free';
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://synera-sip.vercel.app',
+        'X-Title': 'Synera-SIP'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model,
         max_tokens: parseInt(process.env.LLM_MAX_TOKENS) || 200,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -63,11 +65,11 @@ async function explainAlert(alert) {
 
     if (!res.ok) {
       const errorMsg = await res.text();
-      throw new Error(`Anthropic API error: ${res.status} - ${errorMsg}`);
+      throw new Error(`OpenRouter API error: ${res.status} - ${errorMsg}`);
     }
 
     const data = await res.json();
-    const text = data.content[0].text;
+    const text = data.choices[0].message.content;
 
     const { error: updateError } = await supabase
       .from('alerts')
