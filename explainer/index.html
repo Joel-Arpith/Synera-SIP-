@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synera-SIP — Network Intrusion Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:           oklch(9%  0.012 265);
+      --bg-surface:   oklch(12% 0.013 265);
+      --bg-elevated:  oklch(16% 0.014 265);
+      --border:       oklch(22% 0.014 265);
+      --border-sub:   oklch(17% 0.012 265);
+      --accent:       oklch(63% 0.22  275);
+      --accent-dim:   oklch(63% 0.22  275 / 0.13);
+      --accent-glow:  oklch(63% 0.22  275 / 0.25);
+      --danger:       oklch(58% 0.21  25);
+      --danger-dim:   oklch(58% 0.21  25 / 0.13);
+      --warning:      oklch(72% 0.17  55);
+      --warning-dim:  oklch(72% 0.17  55 / 0.13);
+      --success:      oklch(68% 0.17  150);
+      --success-dim:  oklch(68% 0.17  150 / 0.13);
+      --orange:       oklch(68% 0.19  40);
+      --orange-dim:   oklch(68% 0.19  40 / 0.13);
+      --text-1:       oklch(94% 0.006 265);
+      --text-2:       oklch(64% 0.008 265);
+      --text-3:       oklch(44% 0.008 265);
+      --r-sm:  6px;
+      --r-md:  10px;
+      --r-lg:  14px;
+      --r-xl:  20px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { color-scheme: dark; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 58px;
+      border-bottom: 1px solid var(--border-sub);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .wordmark {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wordmark-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-sub);
+      border-radius: var(--r-lg);
+      padding: 3px;
+    }
+    .tab-btn {
+      padding: 6px 18px;
+      border: none;
+      background: transparent;
+      color: var(--text-3);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--r-md);
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text-2); }
+    .tab-btn.active {
+      background: var(--bg-elevated);
+      color: var(--text-1);
+    }
+
+    .live-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-3);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+      animation: livepulse 2.4s ease-in-out infinite;
+    }
+    @keyframes livepulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--success); }
+      50%       { opacity: 0.4; box-shadow: none; }
+    }
+
+    /* ── PANELS ── */
+    .panel { display: none; animation: fadein 0.2s ease-out; }
+    .panel.active { display: block; }
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── SHARED SECTION HEADER ── */
+    .section-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 14px;
+    }
+    .section-heading {
+      font-size: clamp(24px, 3vw, 34px);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      color: var(--text-1);
+      margin-bottom: 12px;
+    }
+    .section-sub {
+      font-size: 15px;
+      color: var(--text-2);
+      max-width: 58ch;
+      line-height: 1.65;
+      margin-bottom: 52px;
+    }
+
+    /* ── OVERVIEW ── */
+    #panel-overview {
+      display: none;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 88px 48px 72px;
+    }
+    #panel-overview.active { display: block; }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 28px;
+    }
+    .hero-eyebrow-line {
+      width: 28px;
+      height: 1px;
+      background: var(--accent);
+      opacity: 0.5;
+    }
+
+    .hero-title {
+      font-size: clamp(42px, 6vw, 68px);
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.06;
+      color: var(--text-1);
+      margin-bottom: 28px;
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text-2);
+      max-width: 56ch;
+      line-height: 1.7;
+      margin-bottom: 64px;
+    }
+
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 52px;
+    }
+    .pillar {
+      padding: 36px 30px;
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+    .pillar:last-child { border-right: none; }
+    .pillar-num {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 20px;
+    }
+    .pillar-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-1);
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+    .pillar-desc {
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.65;
+    }
+
+    .stack-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .stack-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      font-family: 'JetBrains Mono', monospace;
+      margin-right: 4px;
+    }
+    .stack-tag {
+      padding: 4px 11px;
+      border-radius: var(--r-sm);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-2);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── ARCHITECTURE ── */
+    #panel-architecture {
+      display: none;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 72px 48px;
+    }
+    #panel-architecture.active { display: block; }
+
+    .arch-wrap {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 40px 32px;
+      overflow-x: auto;
+    }
+
+    /* ── HOW IT WORKS ── */
+    #panel-how {
+      display: none;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 72px 48px;
+    }
+    #panel-how.active { display: block; }
+
+    .steps { position: relative; }
+
+    .step {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 28px;
+      padding: 36px 0;
+      border-bottom: 1px solid var(--border-sub);
+    }
+    .step:last-child { border-bottom: none; }
+
+    .step-num {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-3);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-num.hi {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .step-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-1);
+      margin-bottom: 8px;
+      letter-spacing: -0.015em;
+    }
+    .step-desc {
+      font-size: 14px;
+      color: var(--text-2);
+      line-height: 1.7;
+      max-width: 64ch;
+    }
+    .step-code {
+      margin-top: 14px;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border-sub);
+      border-radius: var(--r-md);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: var(--text-2);
+      line-height: 1.75;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* ── SIMULATION ── */
+    #panel-simulation {
+      display: none;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 72px 48px;
+    }
+    #panel-simulation.active { display: block; }
+
+    .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px 20px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-glow);
+      border-radius: var(--r-md);
+      margin-bottom: 32px;
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+    .notice-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .notice strong { color: var(--text-1); }
+    .notice a { color: var(--accent); text-decoration: none; }
+    .notice a:hover { text-decoration: underline; }
+
+    .attack-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+    .atk {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 28px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.18s, background 0.18s, transform 0.1s;
+      position: relative;
+    }
+    .atk:hover:not(:disabled) {
+      border-color: var(--atk-color);
+      background: var(--bg-elevated);
+      transform: translateY(-1px);
+    }
+    .atk:active:not(:disabled) { transform: translateY(0); }
+    .atk:disabled { opacity: 0.55; cursor: wait; }
+
+    .atk-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .atk-icon { font-size: 24px; line-height: 1; }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-critical { background: var(--danger-dim);  color: var(--danger);  }
+    .badge-high     { background: var(--orange-dim);  color: var(--orange);  }
+    .badge-medium   { background: var(--warning-dim); color: var(--warning); }
+
+    .atk-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.01em;
+      margin-bottom: 7px;
+    }
+    .atk-desc {
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+
+    .atk-status {
+      margin-top: 16px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.04em;
+    }
+    .atk-status.visible { display: flex; }
+
+    .spinner {
+      width: 11px;
+      height: 11px;
+      border: 1.5px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Terminal */
+    .terminal {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border-sub);
+      background: var(--bg-surface);
+    }
+    .t-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .t-dot-r { background: oklch(58% 0.21 25); }
+    .t-dot-y { background: oklch(72% 0.17 55); }
+    .t-dot-g { background: oklch(68% 0.17 150); }
+    .terminal-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-3);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.06em;
+      margin-left: 6px;
+    }
+
+    .terminal-body {
+      padding: 18px 20px;
+      min-height: 190px;
+      max-height: 340px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.9;
+    }
+    .t-empty { color: var(--text-3); font-style: italic; }
+
+    .t-line {
+      display: grid;
+      grid-template-columns: 68px 90px 1fr;
+      gap: 18px;
+      padding: 3px 0;
+      border-bottom: 1px solid var(--border-sub);
+      animation: lineIn 0.25s ease-out;
+    }
+    .t-line:last-child { border-bottom: none; }
+    @keyframes lineIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .t-ts  { color: var(--text-3); }
+    .t-critical { color: var(--danger);  }
+    .t-high     { color: var(--orange); }
+    .t-medium   { color: var(--warning); }
+    .t-sig { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .t-ip  { color: var(--text-3); }
+    .t-err { color: var(--danger); grid-column: 2 / 4; }
+
+    /* Responsive */
+    @media (max-width: 760px) {
+      nav { padding: 0 20px; }
+      .tabs { gap: 0; }
+      .tab-btn { padding: 6px 12px; font-size: 12px; }
+      #panel-overview,
+      #panel-architecture,
+      #panel-how,
+      #panel-simulation { padding: 48px 20px; }
+      .pillars { grid-template-columns: 1fr; }
+      .pillar { border-right: none; border-bottom: 1px solid var(--border); }
+      .pillar:last-child { border-bottom: none; }
+      .attack-grid { grid-template-columns: 1fr; }
+      .step { grid-template-columns: 40px 1fr; gap: 18px; }
+      .step-num { width: 40px; height: 40px; font-size: 11px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .panel { animation: none; }
+      .live-dot { animation: none; }
+      .spinner  { animation: none; }
+      .t-line   { animation: none; }
+      .atk:hover:not(:disabled) { transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="wordmark">
+    <span class="wordmark-dot"></span>
+    Synera-SIP
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" role="tab" aria-selected="true"  onclick="switchTab('overview',      this)">Overview</button>
+    <button class="tab-btn"        role="tab" aria-selected="false" onclick="switchTab('architecture',  this)">Architecture</button>
+    <button class="tab-btn"        role="tab" aria-selected="false" onclick="switchTab('how',           this)">How It Works</button>
+    <button class="tab-btn"        role="tab" aria-selected="false" onclick="switchTab('simulation',    this)">Simulation</button>
+  </div>
+
+  <div class="live-pill" aria-label="System live">
+    <span class="live-dot"></span>
+    Live
+  </div>
+</nav>
+
+
+<!-- ══════════════════════════════════
+     OVERVIEW
+════════════════════════════════════ -->
+<div id="panel-overview" class="panel active" role="tabpanel">
+  <div class="hero-eyebrow">
+    <span class="hero-eyebrow-line"></span>
+    Network Intrusion Detection System
+    <span class="hero-eyebrow-line"></span>
+  </div>
+
+  <h1 class="hero-title">Your network,<br>watched in real time.</h1>
+  <p class="hero-sub">
+    Synera-SIP runs on a Raspberry Pi and monitors every packet on your network using Suricata. When something looks wrong, it alerts you instantly, explains it in plain English, and blocks the attacker automatically.
+  </p>
+
+  <div class="pillars">
+    <div class="pillar">
+      <p class="pillar-num">01</p>
+      <p class="pillar-title">Real-time Detection</p>
+      <p class="pillar-desc">Suricata processes live network traffic against 40,000+ Emerging Threats signatures. Port scans, exploits, C2 beacons, and DoS attacks: all caught in under a second.</p>
+    </div>
+    <div class="pillar">
+      <p class="pillar-num">02</p>
+      <p class="pillar-title">AI Explanation</p>
+      <p class="pillar-desc">Every high-severity alert is explained in plain English by an LLM. What happened, what the business risk is, and what to do next. No security expertise required.</p>
+    </div>
+    <div class="pillar">
+      <p class="pillar-num">03</p>
+      <p class="pillar-title">Auto-Remediation</p>
+      <p class="pillar-desc">Repeat offenders are automatically banned via iptables. Manual blocks from the dashboard reach the Pi through Supabase Realtime without needing direct network access.</p>
+    </div>
+  </div>
+
+  <div class="stack-row">
+    <span class="stack-label">Stack</span>
+    <span class="stack-tag">Raspberry Pi 4</span>
+    <span class="stack-tag">Suricata IDS</span>
+    <span class="stack-tag">Node.js</span>
+    <span class="stack-tag">Python</span>
+    <span class="stack-tag">Supabase Realtime</span>
+    <span class="stack-tag">React + Vite</span>
+    <span class="stack-tag">Vercel</span>
+    <span class="stack-tag">OpenRouter LLM</span>
+    <span class="stack-tag">iptables</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     ARCHITECTURE
+════════════════════════════════════ -->
+<div id="panel-architecture" class="panel" role="tabpanel">
+  <p class="section-eyebrow">System Design</p>
+  <h2 class="section-heading">Full Pipeline Architecture</h2>
+  <p class="section-sub">Six components. One continuous loop. From raw packet to dashboard update in under two seconds.</p>
+
+  <div class="arch-wrap">
+    <svg viewBox="0 0 960 380" xmlns="http://www.w3.org/2000/svg"
+         style="width:100%;min-width:700px;height:auto;display:block;overflow:visible">
+      <defs>
+        <!-- Flow arrow markers -->
+        <marker id="arr"  viewBox="0 0 8 6" refX="7" refY="3" markerWidth="8" markerHeight="6" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="oklch(44% 0.008 265)"/>
+        </marker>
+        <marker id="arr-a" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="8" markerHeight="6" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="oklch(63% 0.22 275)"/>
+        </marker>
+        <marker id="arr-d" viewBox="0 0 8 6" refX="7" refY="3" markerWidth="8" markerHeight="6" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="oklch(58% 0.21 25)"/>
+        </marker>
+
+        <style>
+          .node { fill: oklch(16% 0.014 265); stroke: oklch(22% 0.014 265); stroke-width: 1; }
+          .node-hi { fill: oklch(63% 0.22 275 / 0.12); stroke: oklch(63% 0.22 275); stroke-width: 1; }
+          .node-pi { fill: oklch(16% 0.014 265); stroke: oklch(63% 0.22 275 / 0.5); stroke-width: 1; stroke-dasharray: 4 3; }
+          .node-warn { fill: oklch(58% 0.21 25 / 0.10); stroke: oklch(58% 0.21 25 / 0.4); stroke-width: 1; }
+
+          .lbl  { fill: oklch(94% 0.006 265); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; text-anchor: middle; dominant-baseline: middle; }
+          .sub  { fill: oklch(44% 0.008 265); font-family: 'JetBrains Mono', monospace; font-size: 10px; text-anchor: middle; dominant-baseline: middle; }
+          .lbl-accent { fill: oklch(63% 0.22 275); }
+          .lbl-danger { fill: oklch(58% 0.21 25); }
+
+          .edge     { stroke: oklch(30% 0.014 265); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; marker-end: url(#arr);   animation: dash 1.8s linear infinite; }
+          .edge-a   { stroke: oklch(63% 0.22 275);  stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; marker-end: url(#arr-a); animation: dash 1.4s linear infinite; }
+          .edge-d   { stroke: oklch(58% 0.21 25);   stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; marker-end: url(#arr-d); animation: dash 2s linear infinite; }
+
+          @keyframes dash { from { stroke-dashoffset: 18; } to { stroke-dashoffset: 0; } }
+
+          @media (prefers-reduced-motion: reduce) {
+            .edge, .edge-a, .edge-d { animation: none; }
+          }
+        </style>
+      </defs>
+
+      <!-- ── Row 1: Internet → Suricata → Backend → Supabase ── -->
+
+      <!-- Attacker / Internet -->
+      <rect class="node-warn" x="20"  y="60" width="120" height="64" rx="10"/>
+      <text class="lbl lbl-danger" x="80"  y="83">Attacker</text>
+      <text class="sub" x="80"  y="103">Internet traffic</text>
+
+      <!-- edge →  -->
+      <line class="edge-d" x1="142" y1="92" x2="188" y2="92"/>
+
+      <!-- Network interface (Pi) -->
+      <rect class="node-pi" x="190" y="56" width="130" height="72" rx="10"/>
+      <text class="lbl" x="255" y="80">Network</text>
+      <text class="sub" x="255" y="97">eth0 on Pi</text>
+      <text class="sub" x="255" y="114">promiscuous</text>
+
+      <!-- edge → Suricata -->
+      <line class="edge-a" x1="322" y1="92" x2="368" y2="92"/>
+
+      <!-- Suricata -->
+      <rect class="node-hi" x="370" y="48" width="150" height="88" rx="10"/>
+      <text class="lbl lbl-accent" x="445" y="75">Suricata IDS</text>
+      <text class="sub" x="445" y="94">40k+ signatures</text>
+      <text class="sub" x="445" y="111">writes eve.json</text>
+
+      <!-- edge → Pi backend -->
+      <line class="edge-a" x1="522" y1="92" x2="568" y2="92"/>
+
+      <!-- Pi Backend (Node.js) -->
+      <rect class="node" x="570" y="56" width="145" height="72" rx="10"/>
+      <text class="lbl" x="642" y="80">Pi Backend</text>
+      <text class="sub" x="642" y="97">Node.js :3001</text>
+      <text class="sub" x="642" y="114">tailer.py feeds</text>
+
+      <!-- edge → Supabase -->
+      <line class="edge-a" x1="717" y1="92" x2="763" y2="92"/>
+
+      <!-- Supabase -->
+      <rect class="node-hi" x="765" y="56" width="145" height="72" rx="10"/>
+      <text class="lbl lbl-accent" x="837" y="80">Supabase</text>
+      <text class="sub" x="837" y="97">Postgres</text>
+      <text class="sub" x="837" y="114">Realtime WS</text>
+
+      <!-- edge → Dashboard (down-right) -->
+      <path class="edge-a" d="M 837 130 L 837 195"/>
+
+      <!-- ── Row 2: LLM + Dashboard + iptables ── -->
+
+      <!-- LLM -->
+      <rect class="node" x="370" y="220" width="145" height="72" rx="10"/>
+      <text class="lbl" x="442" y="248">LLM Analysis</text>
+      <text class="sub" x="442" y="267">OpenRouter API</text>
+      <text class="sub" x="442" y="284">plain-English</text>
+
+      <!-- Pi Backend → LLM -->
+      <path class="edge" d="M 642 130 L 642 175 L 517 230"/>
+
+      <!-- LLM → Supabase -->
+      <line class="edge" x1="517" y1="256" x2="763" y2="256"/>
+
+      <!-- Dashboard -->
+      <rect class="node-hi" x="765" y="197" width="145" height="72" rx="10"/>
+      <text class="lbl lbl-accent" x="837" y="224">Dashboard</text>
+      <text class="sub" x="837" y="242">React on Vercel</text>
+      <text class="sub" x="837" y="259">live updates</text>
+
+      <!-- Dashboard → iptables block (feedback loop) -->
+      <path class="edge-d" d="M 765 256 L 720 256 L 720 305 L 280 305 L 280 256 L 253 256"/>
+
+      <!-- iptables label on feedback line -->
+      <rect fill="oklch(16% 0.014 265)" stroke="oklch(22% 0.014 265)" x="440" y="290" width="130" height="34" rx="6"/>
+      <text class="sub" x="505" y="307">Block: iptables</text>
+      <text class="sub lbl-danger" x="505" y="320">via Realtime</text>
+
+      <!-- Pi group label -->
+      <rect fill="none" stroke="oklch(63% 0.22 275 / 0.15)" stroke-dasharray="6 4" x="170" y="28" width="560" height="156" rx="14"/>
+      <text class="sub" x="450" y="18" style="fill:oklch(44% 0.008 265);font-size:10px">Raspberry Pi sensor</text>
+
+      <!-- tailer.py annotation -->
+      <text class="sub" x="547" y="145" text-anchor="middle">tailer.py</text>
+      <text class="sub" x="547" y="158" text-anchor="middle">inotify</text>
+    </svg>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     HOW IT WORKS
+════════════════════════════════════ -->
+<div id="panel-how" class="panel" role="tabpanel">
+  <p class="section-eyebrow">Step by Step</p>
+  <h2 class="section-heading">From packet to blocked IP</h2>
+  <p class="section-sub">Follow a single malicious packet through every layer of the system.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num hi">01</div>
+      <div>
+        <p class="step-title">Suricata watches every packet</p>
+        <p class="step-desc">The Pi runs Suricata in network monitoring mode, capturing all traffic on its interface. Every packet is tested against 40,000+ Emerging Threats rules covering port scans, exploits, malware command-and-control beacons, and DoS flood patterns.</p>
+        <div class="step-code">alert tcp any any -> $HOME_NET 22 (
+  msg:"ET SCAN Nmap SSH Version Detection";
+  flow:to_server; flags:S; ...)</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num hi">02</div>
+      <div>
+        <p class="step-title">tailer.py streams eve.json in real time</p>
+        <p class="step-desc">A Python process uses Linux inotify to watch Suricata's log file. The instant Suricata writes a new alert line, tailer.py reads it, normalises the numeric severity (1=critical, 2=high, 3=medium, 4=low), and forwards it to the Node.js backend with retry logic on failure.</p>
+        <div class="step-code">{"event_type":"alert","src_ip":"91.108.4.55",
+ "alert":{"severity":1,"signature":"ET DOS..."}}</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num hi">03</div>
+      <div>
+        <p class="step-title">The backend enriches and stores the alert</p>
+        <p class="step-desc">The Node.js server deduplicates identical alerts within a 30-second window, classifies the attack type (RECON, DOS, EXPLOIT, MALWARE), runs a GeoIP lookup, detects slow port scans across a 30-minute window, and writes the enriched record to Supabase.</p>
+        <div class="step-code">{ src_ip: "91.108.4.55", country: "RU",
+  attack_type: "DOS", severity: "critical",
+  grouped: false, count: 1 }</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num hi">04</div>
+      <div>
+        <p class="step-title">An LLM explains it in plain English</p>
+        <p class="step-desc">For high and critical severity alerts, the backend sends the alert metadata to OpenRouter asynchronously. The model returns a structured explanation covering what happened, the business risk, and suggested next steps. This is saved back to the alert row in Supabase.</p>
+        <div class="step-code">{ "situation": "A machine sent repeated flood packets...",
+  "exposure": "Could disrupt your internet connection.",
+  "guidance": "The IP has been blocked automatically." }</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num hi">05</div>
+      <div>
+        <p class="step-title">The dashboard updates instantly, from anywhere</p>
+        <p class="step-desc">The React dashboard subscribes to Supabase Realtime over a WebSocket. New alerts appear in the log, stat cards update, and the threat map places a marker, all without a page refresh, from any device connected to the internet.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">06</div>
+      <div>
+        <p class="step-title">Auto-block closes the loop</p>
+        <p class="step-desc">If an IP triggers five or more high or critical alerts within five minutes, the backend calls iptables to drop all further packets from that IP. Manual blocks from the dashboard write to Supabase, which the Pi picks up via Realtime and executes, with no direct network path required between the dashboard and the Pi.</p>
+        <div class="step-code">sudo iptables -A INPUT -s 91.108.4.55 -j DROP</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     SIMULATION
+════════════════════════════════════ -->
+<div id="panel-simulation" class="panel" role="tabpanel">
+  <p class="section-eyebrow">Live Demo</p>
+  <h2 class="section-heading">Fire a simulated attack</h2>
+  <p class="section-sub">Each button sends a real POST to the Pi sensor. Watch the alert appear in the dashboard in real time.</p>
+
+  <div class="notice">
+    <span class="notice-icon">⚠</span>
+    <span>
+      <strong>Tailscale required.</strong> Your device must be connected to Tailscale and the Pi must be powered on. Alerts fired here will appear live in the
+      <a href="https://synera-sip.vercel.app" target="_blank" rel="noopener">Synera-SIP dashboard</a>.
+    </span>
+  </div>
+
+  <div class="attack-grid">
+
+    <!-- Recon -->
+    <button class="atk" id="atk-recon" onclick="fire('recon')"
+            style="--atk-color: oklch(63% 0.22 275)" aria-label="Fire recon attack">
+      <div class="atk-top">
+        <span class="atk-icon">🔍</span>
+        <span class="badge badge-medium">Medium</span>
+      </div>
+      <p class="atk-name">Reconnaissance</p>
+      <p class="atk-desc">Simulates an Nmap SSH version detection scan. First-stage attacker behaviour: probing open services before deciding how to strike.</p>
+      <div class="atk-status" id="st-recon" style="color: oklch(63% 0.22 275)">
+        <span class="spinner"></span> Sending...
+      </div>
+    </button>
+
+    <!-- DOS -->
+    <button class="atk" id="atk-dos" onclick="fire('dos')"
+            style="--atk-color: oklch(58% 0.21 25)" aria-label="Fire DOS attack">
+      <div class="atk-top">
+        <span class="atk-icon">🌊</span>
+        <span class="badge badge-critical">Critical</span>
+      </div>
+      <p class="atk-name">Denial of Service</p>
+      <p class="atk-desc">Simulates an NTP amplification DDoS flood. High-volume UDP traffic designed to exhaust bandwidth and take services offline.</p>
+      <div class="atk-status" id="st-dos" style="color: oklch(58% 0.21 25)">
+        <span class="spinner"></span> Sending...
+      </div>
+    </button>
+
+    <!-- Malware -->
+    <button class="atk" id="atk-malware" onclick="fire('malware')"
+            style="--atk-color: oklch(58% 0.21 25)" aria-label="Fire malware attack">
+      <div class="atk-top">
+        <span class="atk-icon">🦠</span>
+        <span class="badge badge-critical">Critical</span>
+      </div>
+      <p class="atk-name">Malware C2 Beacon</p>
+      <p class="atk-desc">Simulates a compromised device phoning home to a command-and-control server. The attacker is already inside: this is exfiltration starting.</p>
+      <div class="atk-status" id="st-malware" style="color: oklch(58% 0.21 25)">
+        <span class="spinner"></span> Sending...
+      </div>
+    </button>
+
+    <!-- Exploit -->
+    <button class="atk" id="atk-exploit" onclick="fire('exploit')"
+            style="--atk-color: oklch(72% 0.17 55)" aria-label="Fire exploit attack">
+      <div class="atk-top">
+        <span class="atk-icon">💉</span>
+        <span class="badge badge-critical">Critical</span>
+      </div>
+      <p class="atk-name">Web Exploit</p>
+      <p class="atk-desc">Simulates an SQL injection attempt against a web server on port 80. Matched by Suricata's ET WEB_SERVER ruleset.</p>
+      <div class="atk-status" id="st-exploit" style="color: oklch(72% 0.17 55)">
+        <span class="spinner"></span> Sending...
+      </div>
+    </button>
+
+  </div>
+
+  <!-- Terminal output -->
+  <div class="terminal" role="log" aria-live="polite" aria-label="Alert feed">
+    <div class="terminal-bar">
+      <span class="t-dot t-dot-r"></span>
+      <span class="t-dot t-dot-y"></span>
+      <span class="t-dot t-dot-g"></span>
+      <span class="terminal-title">ALERT FEED — synera-sip / live sensor</span>
+    </div>
+    <div class="terminal-body" id="feed">
+      <p class="t-empty">Waiting for simulated attacks&hellip;</p>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  /* ── Tab switching ── */
+  function switchTab(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+  }
+
+  /* ── Attack metadata ── */
+  const ATTACKS = {
+    recon:   { sev: 'medium',   sig: 'ET SCAN Nmap SSH Version Detection',                    ip: '80.94.92.14'   },
+    dos:     { sev: 'critical', sig: 'ET DOS Possible NTP DDoS Inbound Frequent MON_LIST',    ip: '91.108.4.55'   },
+    malware: { sev: 'critical', sig: 'ET MALWARE Possible C2 Beacon',                         ip: '203.0.113.99'  },
+    exploit: { sev: 'critical', sig: 'ET WEB_SERVER SQL Injection Attempt',                   ip: '198.51.100.42' },
+  };
+
+  const API = 'http://100.83.35.48:3001';
+
+  async function fire(type) {
+    const btn = document.getElementById('atk-' + type);
+    const st  = document.getElementById('st-' + type);
+    const meta = ATTACKS[type];
+
+    btn.disabled = true;
+    st.classList.add('visible');
+
+    const feed = document.getElementById('feed');
+    const empty = feed.querySelector('.t-empty');
+    if (empty) empty.remove();
+
+    const ts = new Date().toTimeString().slice(0, 8);
+
+    try {
+      const res = await fetch(API + '/api/test-alert', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ type }),
+      });
+
+      const line = document.createElement('div');
+      line.className = 't-line';
+
+      if (res.ok) {
+        line.innerHTML = `
+          <span class="t-ts">${ts}</span>
+          <span class="t-${meta.sev} mono">${meta.sev.toUpperCase()}</span>
+          <span class="t-sig">${meta.sig} <span class="t-ip">${meta.ip}</span></span>
+        `;
+      } else {
+        line.innerHTML = `
+          <span class="t-ts">${ts}</span>
+          <span class="t-err">Backend returned ${res.status}. Is the Pi online?</span>
+        `;
+      }
+      feed.prepend(line);
+
+    } catch (err) {
+      const line = document.createElement('div');
+      line.className = 't-line';
+      const msg = (err.message || '').includes('fetch')
+        ? 'Cannot reach Pi. Check Tailscale is connected and the Pi is running.'
+        : err.message;
+      line.innerHTML = `
+        <span class="t-ts">${ts}</span>
+        <span class="t-err">${msg}</span>
+      `;
+      feed.prepend(line);
+    } finally {
+      btn.disabled = false;
+      st.classList.remove('visible');
+    }
+  }
+</script>
+
+</body>
+</html>
